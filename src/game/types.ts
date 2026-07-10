@@ -1,0 +1,87 @@
+/**
+ * Core shared contracts for Prompt Faster. Every module (data, engine, UI) codes
+ * against these types — do not change them without updating all consumers.
+ */
+
+/** Total budget of ACTIVE TYPING time per run. The clock is frozen while the agent streams. */
+export const GAME_DURATION_MS = 60_000;
+
+/** Characters-per-token heuristic used for the joke "tokens/sec" stat. */
+export const CHARS_PER_TOKEN = 4;
+
+export type GamePhase =
+    /** Start screen; nothing running. */
+    | 'idle'
+    /** The fake agent is streaming a message (setup or response). Clock frozen. */
+    | 'streaming'
+    /** Player is typing the ghost prompt. Clock running. */
+    | 'typing'
+    /** Prompt submitted; fake "thinking" spinner before the agent responds. Clock frozen. */
+    | 'thinking'
+    /** Time expired; results are showing. */
+    | 'finished';
+
+/** One canned exchange: the agent's setup line, the prompt the player must type, and the reply. */
+export interface Scenario {
+    id: string;
+    /** Short agent message that tees up the prompt (1-2 sentences, ends with a question/invite). */
+    agentSetup: string;
+    /**
+     * The prompt the player must type. MUST be plain ASCII typeable on a US keyboard
+     * (no smart quotes, em dashes, or unicode). Target length 60-140 chars.
+     */
+    prompt: string;
+    /** The canned agent reply streamed after submit. Plain text, 150-450 chars, funny. */
+    agentResponse: string;
+}
+
+export interface ChatMessage {
+    id: string;
+    role: 'agent' | 'user';
+    text: string;
+    /** True while this agent message is still being revealed char-by-char. */
+    streaming?: boolean;
+}
+
+/** A rank awarded at the end of a run, selected by WPM. */
+export interface RankTitle {
+    /** Inclusive lower WPM bound for this title. */
+    minWpm: number;
+    title: string;
+    /** One-liner shown under the title on the results card. */
+    blurb: string;
+    emoji: string;
+}
+
+export interface GameStats {
+    /** Words per minute: (correctChars / 5) / activeMinutes. */
+    wpm: number;
+    /** Percentage 0-100: correct keystrokes / total keystrokes. 100 when no keystrokes. */
+    accuracy: number;
+    /** Joke stat: (correctChars / CHARS_PER_TOKEN) / activeSeconds, as if the player were an LLM. */
+    tokensPerSecond: number;
+    correctChars: number;
+    errors: number;
+    totalKeystrokes: number;
+    promptsCompleted: number;
+    /** Milliseconds of clock actually consumed (<= GAME_DURATION_MS). */
+    activeTypingMs: number;
+}
+
+/** Everything the UI needs to render a frame of the game. */
+export interface GameSnapshot {
+    phase: GamePhase;
+    /** Full transcript, oldest first. The last agent message may be streaming. */
+    messages: ChatMessage[];
+    /** The prompt currently being typed (null unless phase is 'typing' or 'thinking'). */
+    currentPrompt: string | null;
+    /** Number of chars of currentPrompt typed correctly so far. */
+    typedCount: number;
+    /** True for one frame-ish window after a wrong keystroke (UI shake/flash). */
+    lastKeyWasError: boolean;
+    /** True when the whole prompt is typed and Enter will submit. */
+    readyToSubmit: boolean;
+    /** Clock remaining, ms. Only decreases during 'typing'. */
+    remainingMs: number;
+    stats: GameStats;
+}
