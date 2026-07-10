@@ -17,8 +17,7 @@ const NAVIGATION_KEYS = new Set(['Enter', ' ', 'Spacebar', "'", '"', '/', 'Tab',
  */
 export function GameScreen() {
     const { snapshot, start, reset, handleKey, onAgentStreamDone } = useGame();
-    const { phase, messages, currentPrompt, typedCount, lastKeyWasError, readyToSubmit, remainingMs, stats } =
-        snapshot;
+    const { phase, messages, currentPrompt, typedCount, lastKeyWasError, remainingMs, stats } = snapshot;
 
     const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -88,10 +87,9 @@ export function GameScreen() {
             <div className="border-t border-border bg-bg-elevated/80 px-4 py-4 backdrop-blur-sm sm:px-6">
                 <div className="mx-auto w-full max-w-2xl">
                     <TypingComposer
-                        prompt={phase === 'typing' || phase === 'thinking' ? currentPrompt : null}
+                        prompt={phase === 'typing' ? currentPrompt : null}
                         typedCount={typedCount}
                         lastKeyWasError={lastKeyWasError}
-                        readyToSubmit={readyToSubmit}
                     />
                 </div>
             </div>

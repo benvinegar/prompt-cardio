@@ -30,20 +30,22 @@ export function StartScreen({ onStart }: StartScreenProps) {
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">Prompt Faster</h1>
-            <p className="mt-3 max-w-md text-lg text-ink-dim">How fast can you prompt?</p>
+            <p className="mt-3 max-w-md text-lg text-ink-dim">
+                The vibe coding interview. You are the candidate.
+            </p>
 
             <ul className="mt-8 flex w-full max-w-sm flex-col gap-3 text-left">
                 <li className="flex items-start gap-2.5 text-sm text-ink-dim">
                     <CheckIcon />
-                    <span>60 seconds on the clock, total.</span>
+                    <span>Prompt your AI copilot through the tasks by typing the ghost text.</span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-ink-dim">
                     <CheckIcon />
-                    <span>The clock only runs while YOU are typing.</span>
+                    <span>60 seconds total — the clock only runs while you type. Reading is free.</span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-ink-dim">
                     <CheckIcon />
-                    <span>Wrong keys don't advance — just slow you down.</span>
+                    <span>Wrong keys don't advance. The last key sends it — no Enter needed.</span>
                 </li>
             </ul>
 

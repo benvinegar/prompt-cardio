@@ -79,9 +79,7 @@ export interface GameSnapshot {
     typedCount: number;
     /** True for one frame-ish window after a wrong keystroke (UI shake/flash). */
     lastKeyWasError: boolean;
-    /** True when the whole prompt is typed and Enter will submit. */
-    readyToSubmit: boolean;
-    /** Clock remaining, ms. Only decreases during 'typing'. */
+    /** Clock remaining, ms. Only decreases during 'typing', after the first keystroke of a prompt. */
     remainingMs: number;
     stats: GameStats;
 }

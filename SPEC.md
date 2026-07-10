@@ -1,6 +1,8 @@
 # Prompt Faster — Build Spec
 
 A 100% client-side viral typing game: a fake AI chat where the *player* is the one being tested.
+Theme: you are an engineering candidate being evaluated on your ability to VIBE CODE software
+products — the agent is a smug interviewer/copilot, and the prompts you type are vibe-coding asks.
 Vite + React 19 + TanStack Router + Tailwind CSS 4. No server, no persistence beyond localStorage.
 
 ## Game loop
@@ -9,13 +11,14 @@ Vite + React 19 + TanStack Router + Tailwind CSS 4. No server, no persistence be
    the clock only runs while YOU type.
 2. The fake agent streams a short setup message char-by-char (phase `streaming`, clock frozen).
 3. A ghost prompt appears in the chat input area, greyed out (like Nitrotype's upcoming text).
-   Phase `typing`, clock counting down. The player must type it exactly:
+   Phase `typing`. The clock is armed by the FIRST keystroke of the prompt (reading is free, so
+   WPM measures true typing speed). The player must type it exactly:
    - Correct keystroke → advances one char (rendered filled-in / highlighted).
    - Wrong keystroke → does NOT advance; recorded as an error; brief shake/red flash.
-   - No backspace needed (you never advance on error). Ignore modifier keys.
-4. When fully typed, hitting Enter submits: the prompt posts to the transcript as a user bubble,
-   phase `thinking` (spinner, clock frozen, ~600-900ms), then the agent streams its canned funny
-   response (phase `streaming`, fast ~2s), then the next scenario's ghost prompt appears → `typing`.
+   - No backspace needed (you never advance on error). Ignore non-printable keys entirely.
+4. The last correct keystroke AUTO-SUBMITS (no Enter): the prompt posts to the transcript as a
+   user bubble, phase `thinking` (spinner, clock frozen, ~600-900ms), then the agent streams its
+   canned funny response (phase `streaming`, fast ~2s), then the next ghost prompt → `typing`.
 5. When the 60s of active typing time is exhausted (may happen mid-prompt), phase `finished`:
    show the results modal.
 

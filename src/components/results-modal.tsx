@@ -10,7 +10,7 @@ export interface ResultsModalProps {
 
 /** Builds the shareable brag text using the player's actual run stats. */
 function buildShareText(stats: GameStats, title: string): string {
-    return `I type at ${stats.tokensPerSecond} tok/s (${stats.wpm} WPM, ${stats.accuracy}% acc) — ranked "${title}" on Prompt Faster. Can you prompt faster?`;
+    return `My vibe coding interview verdict: "${title}" — ${stats.wpm} WPM, ${stats.accuracy}% acc, ${stats.tokensPerSecond} tok/s. Think you'd get the offer? Prompt Faster`;
 }
 
 /** Dark overlay + centered, screenshot-friendly card showing the final rank and stat grid. */

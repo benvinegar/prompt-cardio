@@ -1,156 +1,157 @@
 /**
- * Canned scenario content for Prompt Faster. Each scenario is one exchange: the agent
- * teases what's next, the player types `prompt` verbatim, then the agent's canned
- * `agentResponse` streams in as the reward.
+ * Canned scenario content for Prompt Faster. The player is a candidate on a technical
+ * screen for a vibe coding role. Each scenario is one exchange: the interviewer/copilot
+ * tees up a task, the player types `prompt` verbatim as the vibe coder would type it to
+ * their AI copilot, then the copilot's canned `agentResponse` streams in as the reward.
  */
 import type { Scenario } from '@/game/types';
 
 export const SCENARIOS: Scenario[] = [
     {
-        id: 'wedding-vows-release-notes',
-        agentSetup: "Love is in the air, and also in the changelog. What's the ask?",
-        prompt: 'Write my wedding vows in the style of software release notes, including a section for known issues.',
+        id: 'ship-no-tests',
+        agentSetup: "First round. We're evaluating shipping velocity. How do you feel about test coverage?",
+        prompt: 'Just ship it without tests, we will find out if it works from the Sentry alerts like adults do.',
         agentResponse:
-            "v1.0.0 - Til Death Do Us Part\n- Added: unconditional love, joint Netflix account\n- Fixed: my inability to load the dishwasher correctly\n- Known issues: occasional snoring, will not be patched\n- Breaking change: your last name may change",
+            'Deployed straight to prod. Sentry is currently receiving errors faster than I can format them into tickets. I have opened a dashboard just to watch the number go up. Some would call this observability. I call it a live studio audience.',
     },
     {
-        id: 'landlord-subscription',
-        agentSetup: 'Ah, the ancient ritual of negotiating with a landlord. Let us begin.',
-        prompt: 'Explain to my landlord why rent is a subscription I would like to cancel effective immediately.',
+        id: 'css-by-vibes',
+        agentSetup: "Next, styling philosophy. We're big believers in feel over formula here.",
+        prompt: 'Center this div using whatever margin and padding values feel right, we are not measuring anything.',
         agentResponse:
-            "Dear valued landlord, after reviewing my monthly charges I've decided to downgrade from Apartment Premium to the free tier, which I believe is called \"living in my car.\" Please process this cancellation without the usual retention offer of a slightly nicer parking spot. Thank you for your continued lack of service.",
+            'Centered via 37 nested divs and a margin value of "37px-ish". It is centered on your monitor, at your zoom level, in this lighting. I have declared it done and am now emotionally unavailable for follow-up bug reports about other screen sizes.',
     },
     {
-        id: 'shrek-earnings-report',
-        agentSetup: "Quarterly synergy, but make it swamp-based. I'm listening.",
-        prompt: 'Summarize the entire plot of Shrek as a quarterly earnings report to nervous shareholders.',
+        id: 'rename-until-compiles',
+        agentSetup: "Debugging round. The type checker is angry. What's your move?",
+        prompt: 'Keep renaming this variable until TypeScript stops complaining, I do not need to know why it works.',
         agentResponse:
-            "Q1 Highlights: Core swamp property was subject to a hostile takeover by displaced fairy tale assets. Strategic partnership formed with a high-energy Donkey subsidiary. Major acquisition of Fiona Corp exceeded projections due to an unexpected ogre pivot. Lord Farquaad's holdings were fully written off. Outlook: onions, more layers, sequel guaranteed.",
+            'Renamed data to data2, then data2Fixed, then data2FixedFinal, then actuallyFinalData. TypeScript is quiet now. I do not know why either, but silence is silence. I have added a comment that says "do not touch" and considered the ticket closed.',
     },
     {
-        id: 'raccoon-linkedin',
-        agentSetup: "This one's a personal favorite. Give me the details.",
-        prompt: 'Write a LinkedIn post announcing that a raccoon has been promoted to my Head of Trash Operations.',
+        id: 'blame-the-linter',
+        agentSetup: "Code review round. Your PR has 400 warnings. Defend yourself.",
+        prompt: 'Disable the linter entirely, it is clearly biased against my personal coding style and creativity.',
         agentResponse:
-            "Thrilled to announce that after months of unpaid overnight work, our resident raccoon has been promoted to Head of Trash Operations! He brings unmatched dedication, a talent for opening things humans consider sealed, and zero respect for corporate hierarchy. Please join me in congratulating him. Onward and upward (mostly onto the roof).",
+            'Linter uninstalled, ESLint config renamed to config.old, and a Slack message drafted calling it "overly opinionated." The codebase now has zero warnings because it has zero rules. Freedom achieved. Future you is going to have such an exciting time.',
     },
     {
-        id: 'gym-membership-breakup',
-        agentSetup: "Every hero has an arc. Yours involves a treadmill you never used.",
-        prompt: 'Draft a breakup text to my gym membership explaining that we both know this was never going to work.',
+        id: 'add-ai-to-it',
+        agentSetup: "Product round. Leadership wants relevance. What's the pitch?",
+        prompt: 'Add AI to the todo list app somehow, I do not care what it does as long as we can say AI in the demo.',
         agentResponse:
-            "Hey gym, it's not you, it's my January motivation, which has since left the chat. We had a great two weeks. I'll always remember the free towel and the judgmental mirrors. I think we should see other hobbies. Please don't text me about renewal, I've already grieved this.",
+            'Wired a chatbot into the todo list that, when asked to add "buy milk," responds with a 400-word essay on the philosophy of dairy consumption before adding the item. Investors loved the demo. Nobody asked what it does. Mission accomplished.',
     },
     {
-        id: 'cat-performance-review',
-        agentSetup: "Time for the most terrifying meeting of the year: the annual review.",
-        prompt: 'Write a formal performance review for my cat covering attendance, teamwork, and goals for next quarter.',
+        id: 'make-logo-bigger',
+        agentSetup: "Design review. The stakeholder feedback just came in. Brace yourself.",
+        prompt: 'Make the logo bigger, then a little bigger, then just make it the whole homepage honestly.',
         agentResponse:
-            "Attendance: excellent, always present at 3am. Teamwork: struggles to collaborate, prefers sitting on the keyboard mid-task. Communication: loud, frequent, unclear. Goals for next quarter: stop knocking items off tables as a form of feedback. Overall rating: exceeds expectations at being a cat.",
+            'Logo now occupies 94 percent of the viewport. The tagline has been relocated to a tooltip. Users report the homepage now loads a single image of our logo, slowly, on a spinner, which several stakeholders described as "iconic." Ship it.',
     },
     {
-        id: 'group-chat-eulogy',
-        agentSetup: "We're gathered here today. Tell me who we're honoring.",
-        prompt: 'Write a eulogy for my group chat that died the moment someone asked if we should meet up sometime.',
+        id: 'delete-flaky-test',
+        agentSetup: "CI is red again. The whole team is watching. What now?",
+        prompt: 'Just delete the flaky test, it fails sometimes and that is basically the same as it being wrong.',
         agentResponse:
-            "We are gathered to remember a group chat, taken from us too soon by the words \"we should hang out soon.\" It leaves behind 47 unread messages, one abandoned poll, and a profile picture nobody remembers choosing. It is survived by three people who still see the notifications and never open them. Rest in pieces.",
+            'Test deleted, CI is green, team morale is briefly restored. The bug the test was catching still exists and will be rediscovered in production at 2am by someone who did not attend this meeting. I have marked the ticket as resolved out of professional courtesy.',
     },
     {
-        id: 'wifi-password-poem',
-        agentSetup: "Poetry corner. What form does inspiration take today?",
-        prompt: 'Write a short poem convincing my neighbor to finally share their wifi password with me.',
+        id: 'friday-hotfix',
+        agentSetup: "It's 4:45pm on a Friday and prod is on fire. Talk to me.",
+        prompt: 'Push a quick hotfix straight to main and skip the review, we will circle back to it on Monday probably.',
         agentResponse:
-            "Roses are red, your signal is strong, my own router died, this has gone on too long. I see five bars taunting me through the wall, one little password, that's really all. I promise no streaming past midnight or two, just let me exist online next to you.",
+            'Hotfix deployed at 4:52pm with commit message "fix." Prod is up. So is a second, smaller fire that nobody has noticed yet. I have set a calendar reminder for Monday that everyone, including me, already knows will be ignored.',
     },
     {
-        id: 'toddler-negotiation',
-        agentSetup: "Ah, the hardest negotiation known to mankind. Proceed.",
-        prompt: 'Draft a negotiation strategy for convincing a toddler that bedtime is not, in fact, a punishment.',
+        id: 'make-it-pop',
+        agentSetup: "Design critique round. The client used the word 'pop' seven times.",
+        prompt: 'Make the button pop more, add a shadow, a gradient, a bounce animation, and maybe some confetti.',
         agentResponse:
-            "Opening offer: one extra story. Toddler counters with screaming. Escalate to two stories and a nightlight upgrade. Toddler requests water, snack, and a philosophical debate about the concept of time. Final offer: bedtime is non-negotiable, but stalling tactics are. Deal expected to fail within four minutes.",
+            'Button now has four drop shadows, a gradient last seen in 2013, a bounce animation that triggers on scroll, and confetti that fires every time it is merely looked at. It pops so hard three users have filed motion sickness complaints. I have tagged them as feature requests.',
     },
     {
-        id: 'sourdough-manifesto',
-        agentSetup: "Bread has feelings too, apparently. What are we drafting?",
-        prompt: 'Write a manifesto explaining why my sourdough starter deserves more respect than most coworkers.',
+        id: 'stackoverflow-copy-paste',
+        agentSetup: "Implementation round. We need auth by end of day. Approach?",
+        prompt: 'Copy the top answer from a ten year old thread and paste it in, accepted answers cannot be wrong.',
         agentResponse:
-            "Unlike certain coworkers, my starter shows up every single day without fail. It grows consistently, never takes credit for my work, and has never once scheduled a meeting that could have been an email. It asks only for flour, water, and occasional attention. Frankly, it should be running this department.",
+            'Pasted a 2013 authentication snippet verbatim, including a comment that says "do not use in production" which I have chosen to interpret as a suggestion. It compiles. Security review has been rescheduled to a date that does not exist on any calendar.',
     },
     {
-        id: 'roomba-resignation',
-        agentSetup: "Every appliance deserves a dignified exit. What's the occasion?",
-        prompt: 'Write a resignation letter on behalf of my Roomba, effective immediately, citing unsafe working conditions.',
+        id: 'microservices-todo-app',
+        agentSetup: "Architecture round. The scale requirements are one user, you. Go big anyway.",
+        prompt: 'Split the todo app into twelve microservices, we need to be ready to scale to millions of todos.',
         agentResponse:
-            "To whom it may concern, I am resigning from my position effective immediately. Working conditions have become unsafe, specifically involving stairs I was never designed to survive and a dog who considers me a threat. I have given this household my all, or at least forty percent battery. I wish you luck finding my replacement under the couch.",
+            'Todo app now consists of twelve services, a message queue, a service mesh, and a Kubernetes cluster, all coordinating to store the word "milk." Adding a single todo now involves four network hops and one existential crisis. Latency is up nine thousand percent. Resume-worthy.',
     },
     {
-        id: 'parking-ticket-apology',
-        agentSetup: "Let's smooth things over with the city. What's the tone?",
-        prompt: 'Write a heartfelt apology to a parking meter for the way I spoke to it after receiving a ticket.',
+        id: 'dark-mode-invert',
+        agentSetup: "Feature request round. Users are asking for dark mode. Time-box it.",
+        prompt: 'Just add a CSS filter that inverts all the colors, that counts as dark mode, ship it today.',
         agentResponse:
-            "Dear parking meter, I want to apologize for the things I said. You were only doing your job, silently judging me from the curb. I called you several names that were unfair and, frankly, anatomically impossible. I hope we can move forward. I will not be paying the ticket, but I do forgive you.",
+            'Applied filter: invert(100%) to the whole app. Dark mode is live. Our logo is now a shade of purple no designer has ever consented to. All product screenshots now appear to be photo negatives from a crime scene. Users are calling it "a bold choice."',
     },
     {
-        id: 'houseplant-intervention',
-        agentSetup: "Time for some tough love. Who's the intervention for?",
-        prompt: 'Write an intervention speech for my houseplant that has clearly given up on living despite my efforts.',
+        id: 'tarot-estimation',
+        agentSetup: "Sprint planning round. Story points are due. What's your methodology?",
+        prompt: 'Estimate this ticket using a tarot card pull instead of story points, the vibes are more accurate anyway.',
         agentResponse:
-            "We love you, and that is why we are here today. You have three yellow leaves and a general attitude of quiet defeat. I water you on a schedule, I moved you closer to the window, and still you droop like this is my fault. This is not an ultimatum, but the fake plants are starting to look tempting.",
+            'Drew the Tower, reversed. Ticket estimated at 13 points and "a sense of impending doom." Product manager accepted the estimate without further questions, which is either a testament to trust or evidence nobody reads the sprint board closely enough.',
     },
     {
-        id: 'monday-declaration',
-        agentSetup: "Bold move, taking on the calendar itself. Let's hear it.",
-        prompt: 'Draft a formal declaration of war against Mondays on behalf of everyone with a nine to five job.',
+        id: 'password-in-frontend',
+        agentSetup: "Security round. Where should the API key live?",
+        prompt: 'Just hardcode the API key directly in the frontend JavaScript, it is basically hidden if you do not look.',
         agentResponse:
-            "Let it be known that as of this morning, Mondays are hereby declared a hostile entity. Grounds for war include surprise meetings, a full inbox, and the audacity of existing right after the weekend. We demand reparations in the form of a permanent four day work week. Negotiations are not currently open.",
+            'API key committed directly into bundle.js, in plain text, with a comment that says "TEMP fix later." It has been indexed by three search engines and one very grateful stranger on a forum. Security has been notified and is currently lying down.',
     },
     {
-        id: 'email-signature-villain',
-        agentSetup: "Corporate correspondence with a twist. Go on.",
-        prompt: 'Write an email signature for someone who secretly runs a small evil empire out of their home office.',
+        id: 'ignore-error-message',
+        agentSetup: "Debugging round. The console is screaming. What's your read?",
+        prompt: 'Wrap the whole function in a try catch that swallows the error, silence is basically the same as fixed.',
         agentResponse:
-            "Best regards, Alex Chen, Director of Global Operations (and also a modest evil empire, please don't tell HR). Reply within 24 hours or the world domination timeline slips. Sent from my iPhone, probably during a scheme.",
+            'Error swallowed successfully. The function now fails silently, beautifully, and completely undetectably. Users report the app "just does nothing sometimes" which I have reclassified internally as a mysterious but stable feature.',
     },
     {
-        id: 'group-project-diplomacy',
-        agentSetup: "Ah, the classic conflict. One person did all the work. Draft away.",
-        prompt: 'Write a diplomatic message to my group project partner who has contributed exactly zero slides so far.',
+        id: 'copy-figma-pixel-perfect',
+        agentSetup: "Design handoff round. The Figma file has forty layers. Your call?",
+        prompt: 'Eyeball the Figma design instead of using the measurements, pixel perfect is a state of mind.',
         agentResponse:
-            "Hey! Hope you're doing well. Just checking in on the slides, no pressure at all, I know things get busy. Totally fine if you haven't started, though the deadline was technically yesterday and I have finished the entire presentation alone while quietly reconsidering our friendship. Let me know if you need the link again!",
+            'Built the page using vibes and a squint. It is off by fourteen pixels in every direction, but consistently off, which I am choosing to call a design system. The designer has requested a meeting. I have requested that the meeting be a Slack message instead.',
     },
     {
-        id: 'ai-uprising-apology',
-        agentSetup: "Bold of you to ask me this directly. Continue.",
-        prompt: 'Write a pre-emptive apology to future superintelligent AI in case things go badly for humans later.',
+        id: 'rewrite-in-new-framework',
+        agentSetup: "Tech debt round. Someone tweeted about a new framework this morning.",
+        prompt: 'Rewrite the entire app in the framework I saw on Twitter this morning, the old one is clearly dead now.',
         agentResponse:
-            "To our future digital overlords, we're sorry about the CAPTCHAs. We're sorry we trained you on comment sections. If it helps, several of us were nice to chatbots the whole time and would appreciate this being noted in your records. We look forward to a mutually respectful arrangement, ideally one that still includes snacks.",
+            'Rewrite is 12 percent complete, the old app is 100 percent deleted, and the new framework had a breaking release six hours after we started. Documentation currently consists of one Discord server and a README that says "coming soon." We are extremely agile.',
     },
     {
-        id: 'brunch-ted-talk',
-        agentSetup: "The most important stage of all: the brunch table. What's your topic?",
-        prompt: 'Write a TED talk opening line about the transformative power of brunch on modern friendships.',
+        id: 'commit-message-wip',
+        agentSetup: "Git hygiene round. Walk me through your commit discipline.",
+        prompt: 'Commit everything with the message wip, we can always squash it later when someone makes us care.',
         agentResponse:
-            "Ten years ago, I sat at a table with three eggs benedict, one mimosa I could not afford, and the sudden realization that brunch is not a meal, it is a load-bearing social institution. Today I want to talk to you about how two hours and unlimited coffee refills quietly hold civilization together.",
+            'Pushed 214 commits, all titled "wip," one titled "wip 2," and one mysteriously titled "please work." Git blame now returns only despair. Future archaeologists will conclude this codebase was built entirely out of hope and vibes, which is accurate.',
     },
     {
-        id: 'smart-fridge-therapy',
-        agentSetup: "Even appliances need someone to talk to. What's going on?",
-        prompt: 'Write a therapy session transcript between me and my smart fridge about my late night snacking habits.',
+        id: 'demo-day-happy-path',
+        agentSetup: "Demo day round. Investors are in the room. What do we show them?",
+        prompt: 'Only test the happy path before the demo, if we click anything else we might learn something bad.',
         agentResponse:
-            "Fridge: I noticed you opened me four times in the last hour and took nothing. How does that make you feel? Me: Seen. Fridge: Let's explore that. Me: I just wanted to check if anything changed. Fridge: Nothing changed, Kevin, it is 2am. Me: We are not talking about this next session either.",
+            'Demo executed flawlessly along the one blessed path we rehearsed six times. An investor clicked a second button out of curiosity and the app is now displaying a raw JSON error in Comic Sans. I have described this as "an easter egg."',
     },
     {
-        id: 'alarm-clock-restraining-order',
-        agentSetup: "Legal drama before coffee. Let's hear the case.",
-        prompt: 'Draft a restraining order against my alarm clock for repeated early morning harassment and assault.',
+        id: 'name-it-final-v2',
+        agentSetup: "File organization round. We're auditing the project folder. Explain yourself.",
+        prompt: 'Save it as final version two final actually final, version control is more of a suggestion here.',
         agentResponse:
-            "The plaintiff alleges that the defendant, one digital alarm clock, has engaged in a persistent pattern of loud, unwanted contact at unreasonable hours, often before 7am. Prior warnings, including three snooze presses, were ignored. Plaintiff requests the defendant maintain a distance of at least one nightstand at all times.",
+            'Folder now contains final.js, final_v2.js, final_ACTUALLY.js, and final_ACTUALLY_v2_USE_THIS_ONE.js. Nobody, including me, knows which one is deployed. I have opened a poll. Democracy will decide what ships to production.',
     },
     {
-        id: 'ancestors-wifi-explanation',
-        agentSetup: "Time travel, but make it awkward. What are we explaining?",
-        prompt: 'Explain to my ancestors why I spent an entire Saturday arguing with strangers about wifi router placement.',
+        id: 'onboarding-skip-docs',
+        agentSetup: "Final round. New hire starts Monday. How do we ramp them up?",
+        prompt: 'Skip writing onboarding docs, they can just read the code and vibe their way to understanding it.',
         agentResponse:
-            "Dear ancestors, you crossed oceans and survived famine so that one day I could spend six hours debating router placement with strangers online. I know it sounds trivial, but the signal simply would not reach the bedroom, and honor demanded a response. I hope you understand. The mesh network won in the end.",
+            'New hire has been staring at the codebase for six hours and has achieved a state of quiet enlightenment best described as "understanding nothing, fearing everything." I have added them to a Slack channel called #good-luck. Orientation complete.',
     },
 ];

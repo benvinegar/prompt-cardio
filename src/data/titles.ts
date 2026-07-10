@@ -1,6 +1,7 @@
 /**
- * Rank titles awarded at the end of a run, selected by WPM band. Written in the voice
- * of a smug AI evaluating a human's typing performance.
+ * Hiring verdict ranks awarded at the end of a run, selected by WPM band. Written in the
+ * voice of a smug AI copilot delivering the hiring committee's verdict on your technical
+ * screen for a vibe coding role.
  */
 import type { RankTitle } from '@/game/types';
 
@@ -8,62 +9,62 @@ import type { RankTitle } from '@/game/types';
 export const RANK_TITLES: RankTitle[] = [
     {
         minWpm: 0,
-        title: 'Captcha Failure',
-        blurb: 'You type slower than the robot check meant to prove you are human.',
+        title: 'Auto-Rejected by ATS',
+        blurb: 'The applicant tracking system saw this and filed it under "please do not."',
         emoji: '🐌',
     },
     {
         minWpm: 15,
-        title: 'Dial-Up Modem',
-        blurb: 'Technically connected. Technically producing text. Barely either.',
-        emoji: '📠',
+        title: 'Ghosted After Round One',
+        blurb: 'We said we would follow up. We will not. This is the follow up.',
+        emoji: '👻',
     },
     {
         minWpm: 25,
-        title: 'Two-Finger Typist',
-        blurb: 'You have located the keyboard. Progress, if you squint.',
-        emoji: '☝️',
+        title: 'Take-Home Assignment Casualty',
+        blurb: 'You opened the repo. That took effort. The effort stopped there.',
+        emoji: '💀',
     },
     {
         minWpm: 35,
-        title: 'Autocomplete Dependent',
-        blurb: 'Serviceable. We suspect your phone finishes most of your sentences.',
-        emoji: '📱',
+        title: 'Unpaid Intern, Probably',
+        blurb: 'Enthusiastic, unsupervised, and one syntax error from a small fire.',
+        emoji: '📎',
     },
     {
         minWpm: 45,
-        title: 'Certified Human',
-        blurb: 'Average keystrokes for an average primate. No notes, no applause.',
+        title: 'Culture Fit (Unfortunately)',
+        blurb: 'The code is mediocre but you know all our Slack emojis. Welcome aboard.',
         emoji: '🙂',
     },
     {
         minWpm: 55,
-        title: 'Keyboard Warrior',
-        blurb: 'Respectable speed. Your group chat replies must be devastating.',
+        title: 'Mid-Level Vibe Engineer',
+        blurb: 'Ships things. Some of them work. We have decided not to ask which.',
         emoji: '⌨️',
     },
     {
         minWpm: 70,
-        title: 'Caffeinated Intern',
-        blurb: 'Fast, twitchy, and slightly concerning. We admire the commitment.',
+        title: 'Senior Vibes Architect',
+        blurb: 'You do not write code so much as summon it, and we respect that.',
         emoji: '☕',
     },
     {
         minWpm: 85,
-        title: 'Stenographer in Disguise',
-        blurb: 'Courtroom-grade fingers. We are quietly reviewing your credentials.',
+        title: 'Principal Prompt Whisperer',
+        blurb: 'The copilot listens to you. We are not entirely sure why. Neither are you.',
         emoji: '⚖️',
     },
     {
         minWpm: 100,
-        title: 'Prompt Engineer Prime',
-        blurb: 'Triple digits. You type faster than most people think.',
+        title: 'Founding Vibe Engineer',
+        blurb: 'Triple digits. HR has already drafted your equity grant and your legend.',
         emoji: '🚀',
     },
     {
         minWpm: 120,
-        title: 'AGI Whisperer',
-        blurb: 'We have seen the future, and it types exactly like you.',
+        title: 'CTO of Vibes',
+        blurb: 'We have nothing left to teach you. Please, teach us. Take the building.',
         emoji: '🧠',
     },
 ];

@@ -1,8 +1,10 @@
 /**
  * Engine hook for Prompt Faster. Owns the shuffled scenario queue, transcript, per-key
- * advance/error accounting, Enter submission, the frozen-while-streaming countdown, phase
- * transitions, and final stats. The UI owns the char-by-char reveal animation of agent
- * messages and reports completion via `onAgentStreamDone()`.
+ * advance/error accounting, auto-submit on prompt completion, the frozen-while-streaming
+ * countdown, phase transitions, and final stats. The clock only runs between the first
+ * keystroke of a prompt and its submission, so reading time is free and WPM reflects true
+ * typing speed. The UI owns the char-by-char reveal animation of agent messages and reports
+ * completion via `onAgentStreamDone()`.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
@@ -40,7 +42,6 @@ interface EngineState {
     currentPrompt: string | null;
     typedCount: number;
     lastKeyWasError: boolean;
-    readyToSubmit: boolean;
     remainingMs: number;
 
     correctChars: number;
@@ -77,7 +78,6 @@ function createIdleState(): EngineState {
         currentPrompt: null,
         typedCount: 0,
         lastKeyWasError: false,
-        readyToSubmit: false,
         remainingMs: GAME_DURATION_MS,
         correctChars: 0,
         errors: 0,
@@ -145,7 +145,6 @@ class GameEngine {
             currentPrompt: s.currentPrompt,
             typedCount: s.typedCount,
             lastKeyWasError: s.lastKeyWasError,
-            readyToSubmit: s.readyToSubmit,
             remainingMs: s.remainingMs,
             stats: computeStats({
                 correctChars: s.correctChars,
@@ -179,22 +178,36 @@ class GameEngine {
         }
     }
 
-    /** Enters 'typing' phase bookkeeping: starts the countdown interval. */
+    /**
+     * Enters 'typing' phase. The countdown does NOT start yet — reading the prompt is free.
+     * The clock is armed by {@link startClock} on the first keystroke of the prompt.
+     */
     private enterTyping(): void {
         this.state.phase = 'typing';
-        this.lastTickAt = Date.now();
+    }
+
+    /** Starts the countdown interval (idempotent); called on the first keystroke of a prompt. */
+    private startClock(): void {
         if (this.tickHandle !== null) {
-            clearInterval(this.tickHandle);
+            return;
         }
+        this.lastTickAt = Date.now();
         this.tickHandle = setInterval(this.onTick, TICK_MS);
     }
 
-    /** Leaves 'typing' phase bookkeeping: stops the countdown interval, flushing elapsed time. */
-    private leaveTyping(): void {
-        if (this.tickHandle !== null) {
-            clearInterval(this.tickHandle);
-            this.tickHandle = null;
+    /** Stops the countdown interval, flushing the elapsed remainder so no typing time is dropped. */
+    private stopClock(): void {
+        if (this.tickHandle === null) {
+            return;
         }
+        clearInterval(this.tickHandle);
+        this.tickHandle = null;
+
+        const now = Date.now();
+        const delta = now - this.lastTickAt;
+        this.lastTickAt = now;
+        this.state.activeTypingMs += delta;
+        this.state.remainingMs = Math.max(0, this.state.remainingMs - delta);
     }
 
     private onTick = (): void => {
@@ -210,10 +223,9 @@ class GameEngine {
 
         if (this.state.remainingMs <= 0) {
             this.state.remainingMs = 0;
-            this.leaveTyping();
+            this.stopClock();
             this.state.phase = 'finished';
             this.state.currentPrompt = null;
-            this.state.readyToSubmit = false;
         }
 
         this.emit();
@@ -277,7 +289,6 @@ class GameEngine {
             const scenario = s.queue[s.queueIndex]!;
             s.currentPrompt = scenario.prompt;
             s.typedCount = 0;
-            s.readyToSubmit = false;
             s.lastKeyWasError = false;
             this.enterTyping();
         }
@@ -287,31 +298,20 @@ class GameEngine {
 
     handleKey = (key: string): void => {
         const s = this.state;
-        if (s.phase !== 'typing') {
+        if (s.phase !== 'typing' || s.currentPrompt === null) {
             return;
         }
-        if (key.length > 1 && key !== 'Enter') {
-            return;
-        }
-
-        if (s.readyToSubmit) {
-            if (key === 'Enter') {
-                this.submit();
-            }
+        // Ignore non-printable keys (Enter, Shift, Arrow*, Backspace, ...): with auto-submit
+        // on the last character they have no role, so they neither advance nor count as errors.
+        if (key.length > 1) {
             return;
         }
 
-        const prompt = s.currentPrompt ?? '';
+        // The clock is armed by the first keystroke of each prompt, so reading time is free
+        // and WPM measures actual typing speed.
+        this.startClock();
 
-        if (key === 'Enter') {
-            // Enter while incomplete counts as an error keystroke.
-            s.errors += 1;
-            s.totalKeystrokes += 1;
-            this.flashError();
-            this.emit();
-            return;
-        }
-
+        const prompt = s.currentPrompt;
         const expected = prompt[s.typedCount];
         if (key === expected) {
             s.typedCount += 1;
@@ -323,7 +323,9 @@ class GameEngine {
                 this.errorFlashHandle = null;
             }
             if (s.typedCount >= prompt.length) {
-                s.readyToSubmit = true;
+                // Last character typed -> auto-submit, no Enter required.
+                this.submit();
+                return;
             }
         } else {
             s.errors += 1;
@@ -354,14 +356,21 @@ class GameEngine {
             return;
         }
 
-        this.leaveTyping();
+        this.stopClock();
 
         s.promptsCompleted += 1;
         s.messages = [...s.messages, { id: randomId(), role: 'user', text: prompt }];
         s.currentPrompt = null;
         s.typedCount = 0;
-        s.readyToSubmit = false;
         s.lastKeyWasError = false;
+
+        // The flush above may have consumed the last of the clock on the final keystroke.
+        if (s.remainingMs <= 0) {
+            s.phase = 'finished';
+            this.emit();
+            return;
+        }
+
         s.phase = 'thinking';
 
         this.emit();
