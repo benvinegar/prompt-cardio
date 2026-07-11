@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
+import { buildReportBeats } from '@/data/agent-reports';
 import { OPENING_MESSAGES } from '@/data/greetings';
 import { SCENARIOS } from '@/data/scenarios';
 import { computeStats } from '@/game/scoring';
@@ -49,7 +50,17 @@ export interface UseGameReturn {
 }
 
 /** What the streaming agent message currently represents, so onAgentStreamDone knows what's next. */
-type StreamKind = 'opening' | 'setup' | 'response';
+type StreamKind = 'opening' | 'setup' | 'response' | 'report';
+
+/** How many further prompt submissions pass before a launched swarm "reports back". */
+const REPORT_DUE_AFTER_PROMPTS = 2;
+
+/** A scheduled "the subagents reported in, it's all rubbish" interstitial. */
+interface PendingReport {
+    count: number;
+    /** Plays once `promptsCompleted` reaches this value. */
+    dueAtPrompts: number;
+}
 
 /** Internal mutable engine state, kept outside React state for cheap per-keystroke updates. */
 interface EngineState {
@@ -74,6 +85,8 @@ interface EngineState {
     queueIndex: number;
     /** What the in-flight streaming message represents. */
     streamKind: StreamKind | null;
+    /** Swarms that have been launched and will "report back" a few prompts later. */
+    pendingReports: PendingReport[];
 }
 
 /** Fisher-Yates shuffle; returns a new array, does not mutate the input. */
@@ -107,6 +120,7 @@ function createIdleState(): EngineState {
         queue: [],
         queueIndex: -1,
         streamKind: null,
+        pendingReports: [],
     };
 }
 
@@ -343,7 +357,18 @@ class GameEngine {
         const finishedKind = s.streamKind;
         s.streamKind = null;
 
-        if (finishedKind === 'opening' || finishedKind === 'response') {
+        if (finishedKind === 'opening' || finishedKind === 'response' || finishedKind === 'report') {
+            // A launched swarm may be due to "report back" before the next task.
+            if (finishedKind === 'response') {
+                const dueIndex = s.pendingReports.findIndex((report) => s.promptsCompleted >= report.dueAtPrompts);
+                if (dueIndex !== -1) {
+                    const report = s.pendingReports[dueIndex]!;
+                    s.pendingReports = s.pendingReports.filter((_, index) => index !== dueIndex);
+                    this.pushStreamingAgentMessage('', 'report', buildReportBeats(report.count));
+                    this.emit();
+                    return;
+                }
+            }
             // Stream the next scenario's setup line.
             const scenario = advanceQueue(s);
             this.pushStreamingAgentMessage(scenario.agentSetup, 'setup');
@@ -447,10 +472,15 @@ class GameEngine {
             if (this.state.phase !== 'thinking') {
                 return;
             }
-            // Any subagents "launched" by this response start burning tokens immediately (forever).
+            // Any subagents "launched" by this response start burning tokens immediately (forever),
+            // and are scheduled to "report back" a couple of tasks from now.
             for (const beat of scenario.response) {
                 if (beat.kind === 'subagents') {
                     this.state.subagentCount += beat.count;
+                    this.state.pendingReports.push({
+                        count: beat.count,
+                        dueAtPrompts: this.state.promptsCompleted + REPORT_DUE_AFTER_PROMPTS,
+                    });
                 }
             }
             this.pushStreamingAgentMessage('', 'response', scenario.response);
