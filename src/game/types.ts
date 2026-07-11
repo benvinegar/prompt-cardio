@@ -21,6 +21,31 @@ export type GamePhase =
     /** Time expired; results are showing. */
     | 'finished';
 
+/**
+ * One step of a fake agent response, played in order by the UI while the clock is frozen:
+ * a "thinking" block, a tool call (spinner -> checkmark), or streamed reply text.
+ */
+export type ResponseBeat =
+    | {
+          kind: 'thinking';
+          /** Fake chain-of-thought streamed in a dim italic block. Keep short (~60-200 chars). */
+          text: string;
+      }
+    | {
+          kind: 'tool';
+          /** Tool name, e.g. 'Read', 'Edit', 'Write', 'Bash', 'Grep', 'Tests', 'Web Search'. */
+          name: string;
+          /** One-line detail, e.g. 'src/components/Button.tsx' or 'pnpm test  (2 passed, 14 skipped)'. */
+          detail: string;
+          /** Spinner duration before the checkmark. UI default applies when omitted. */
+          durationMs?: number;
+      }
+    | {
+          kind: 'text';
+          /** The streamed reply text (the punchline). */
+          text: string;
+      };
+
 /** One canned exchange: the agent's setup line, the prompt the player must type, and the reply. */
 export interface Scenario {
     id: string;
@@ -31,15 +56,23 @@ export interface Scenario {
      * (no smart quotes, em dashes, or unicode). Target length 60-140 chars.
      */
     prompt: string;
-    /** The canned agent reply streamed after submit. Plain text, 150-450 chars, funny. */
-    agentResponse: string;
+    /**
+     * The canned agent reply played after submit as an ordered beat sequence — typically
+     * thinking -> 1-3 tools -> one final text beat carrying the joke.
+     */
+    response: ResponseBeat[];
 }
 
 export interface ChatMessage {
     id: string;
     role: 'agent' | 'user';
     text: string;
-    /** True while this agent message is still being revealed char-by-char. */
+    /**
+     * Structured agent-response beats. When present, the UI plays them in order (and `text`
+     * is unused); plain setup/greeting messages leave this unset and stream `text` instead.
+     */
+    beats?: ResponseBeat[];
+    /** True while this agent message is still being revealed/played. */
     streaming?: boolean;
 }
 

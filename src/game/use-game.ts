@@ -11,7 +11,14 @@ import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'r
 import { OPENING_MESSAGES } from '@/data/greetings';
 import { SCENARIOS } from '@/data/scenarios';
 import { computeStats } from '@/game/scoring';
-import { GAME_DURATION_MS, type ChatMessage, type GamePhase, type GameSnapshot, type Scenario } from '@/game/types';
+import {
+    GAME_DURATION_MS,
+    type ChatMessage,
+    type GamePhase,
+    type GameSnapshot,
+    type ResponseBeat,
+    type Scenario,
+} from '@/game/types';
 
 /** Interval cadence for the countdown timer while `phase === 'typing'`. */
 const TICK_MS = 60;
@@ -231,11 +238,12 @@ class GameEngine {
         this.emit();
     };
 
-    private pushStreamingAgentMessage(text: string, kind: StreamKind): void {
-        this.state.messages = [
-            ...this.state.messages,
-            { id: randomId(), role: 'agent', text, streaming: true },
-        ];
+    private pushStreamingAgentMessage(text: string, kind: StreamKind, beats?: ResponseBeat[]): void {
+        const message: ChatMessage = { id: randomId(), role: 'agent', text, streaming: true };
+        if (beats) {
+            message.beats = beats;
+        }
+        this.state.messages = [...this.state.messages, message];
         this.state.streamKind = kind;
         this.state.phase = 'streaming';
     }
@@ -383,7 +391,7 @@ class GameEngine {
             if (this.state.phase !== 'thinking') {
                 return;
             }
-            this.pushStreamingAgentMessage(scenario.agentResponse, 'response');
+            this.pushStreamingAgentMessage('', 'response', scenario.response);
             this.emit();
         }, randomThinkingDelayMs());
     }

@@ -14,16 +14,18 @@ export interface StreamingTextProps {
     streaming: boolean;
     /** Called exactly once, when the full text has finished revealing. */
     onDone?: () => void;
+    /** Fixed reveal speed override; when omitted, a natural 15-25ms/char delay is picked per mount. */
+    msPerChar?: number;
 }
 
 /**
  * Reveals `text` character-by-character while `streaming` is true, then calls `onDone` exactly
  * once. Renders a blinking caret at the reveal point while still streaming.
  */
-export function StreamingText({ text, streaming, onDone }: StreamingTextProps) {
+export function StreamingText({ text, streaming, onDone, msPerChar }: StreamingTextProps) {
     const [revealCount, setRevealCount] = useState(streaming ? 0 : text.length);
     const doneFiredRef = useRef(false);
-    const charDelayRef = useRef(pickCharDelay());
+    const charDelayRef = useRef(msPerChar ?? pickCharDelay());
 
     useEffect(() => {
         if (!streaming) {

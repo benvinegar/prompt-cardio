@@ -1,4 +1,5 @@
 import type { ChatMessage } from '@/game/types';
+import { AgentResponseBeats } from '@/components/agent-response-beats';
 import { StreamingText } from '@/components/streaming-text';
 
 function SparkIcon() {
@@ -40,7 +41,19 @@ export function MessageBubble({ message, onStreamDone }: MessageBubbleProps) {
                 }`}
             >
                 {isAgent ? (
-                    <StreamingText text={message.text} streaming={message.streaming ?? false} onDone={onStreamDone} />
+                    message.beats ? (
+                        <AgentResponseBeats
+                            beats={message.beats}
+                            streaming={message.streaming ?? false}
+                            onDone={onStreamDone}
+                        />
+                    ) : (
+                        <StreamingText
+                            text={message.text}
+                            streaming={message.streaming ?? false}
+                            onDone={onStreamDone}
+                        />
+                    )
                 ) : (
                     <span className="font-mono">{message.text}</span>
                 )}
