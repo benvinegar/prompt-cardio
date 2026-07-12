@@ -129,5 +129,11 @@ export interface GameSnapshot {
     remainingMs: number;
     /** Subagents currently "running" (never finish; each multiplies the token burn rate). */
     subagentCount: number;
+    /**
+     * Current streak of consecutive correct keystrokes. Resets to 0 on any wrong keystroke and
+     * at the start of a run, but carries across prompt boundaries (submitting a prompt does not
+     * reset it).
+     */
+    streak: number;
     stats: GameStats;
 }

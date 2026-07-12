@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '@/game/use-game';
+import { playError, playFinish, playKeyClick, playSubmit, playTimeLow, playToolPing } from '@/lib/audio';
 import { StartScreen } from '@/components/start-screen';
 import { Hud } from '@/components/hud';
 import { MessageBubble } from '@/components/message-bubble';
@@ -9,6 +10,9 @@ import { ResultsModal } from '@/components/results-modal';
 
 /** Keys that would scroll the page or otherwise navigate away if left unhandled. */
 const NAVIGATION_KEYS = new Set(['Enter', ' ', 'Spacebar', "'", '"', '/', 'Tab', 'Backspace']);
+
+/** Mirrors the HUD's low-time threshold; below this, a soft clock tick plays once per second. */
+const TIME_LOW_THRESHOLD_MS = 10_000;
 
 /**
  * The single route component. Composes the start screen, chat transcript, HUD, typing
@@ -63,6 +67,60 @@ export function GameScreen() {
         return () => clearInterval(id);
     }, [isStreaming]);
 
+    // Key click / error thunk: driven off snapshot deltas rather than the raw keydown handler,
+    // since correctness (advance vs error) is decided inside the engine and this stays in sync
+    // with it for free, including resets when a fresh run starts.
+    const lastKeystrokeStatsRef = useRef({ totalKeystrokes: stats.totalKeystrokes, errors: stats.errors });
+    useEffect(() => {
+        const prev = lastKeystrokeStatsRef.current;
+        if (stats.totalKeystrokes > prev.totalKeystrokes) {
+            if (stats.errors > prev.errors) {
+                playError();
+            } else {
+                playKeyClick();
+            }
+        }
+        lastKeystrokeStatsRef.current = { totalKeystrokes: stats.totalKeystrokes, errors: stats.errors };
+    }, [stats.totalKeystrokes, stats.errors]);
+
+    // Submit whoosh on typing -> thinking, and the finish sting whenever the run ends.
+    const prevPhaseRef = useRef(phase);
+    useEffect(() => {
+        const prevPhase = prevPhaseRef.current;
+        if (prevPhase === 'typing' && phase === 'thinking') {
+            playSubmit();
+        }
+        if (phase === 'finished' && prevPhase !== 'finished') {
+            playFinish();
+        }
+        prevPhaseRef.current = phase;
+    }, [phase]);
+
+    // A subtle tick once when a new beats-driven agent message (response/report) starts
+    // streaming in. Pinging per-completed-tool-beat would be far too chatty across a transcript.
+    const pingedMessageIdRef = useRef<string | null>(null);
+    useEffect(() => {
+        const last = messages[messages.length - 1];
+        if (last && last.role === 'agent' && last.streaming && last.beats && pingedMessageIdRef.current !== last.id) {
+            pingedMessageIdRef.current = last.id;
+            playToolPing();
+        }
+    }, [messages]);
+
+    // Soft clock tick, once per second, while under 10s remain during active typing.
+    const lastLowSecondRef = useRef<number | null>(null);
+    useEffect(() => {
+        if (phase !== 'typing' || remainingMs >= TIME_LOW_THRESHOLD_MS || remainingMs <= 0) {
+            lastLowSecondRef.current = null;
+            return;
+        }
+        const bucket = Math.floor(remainingMs / 1000);
+        if (lastLowSecondRef.current !== bucket) {
+            lastLowSecondRef.current = bucket;
+            playTimeLow();
+        }
+    }, [phase, remainingMs]);
+
     if (phase === 'idle') {
         return <StartScreen onStart={start} />;
     }
@@ -75,6 +133,7 @@ export function GameScreen() {
                 accuracy={stats.accuracy}
                 tokensBurned={stats.tokensBurned}
                 subagentCount={snapshot.subagentCount}
+                streak={snapshot.streak}
                 phase={phase}
             />
 

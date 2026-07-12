@@ -50,7 +50,18 @@ export interface UseGameReturn {
 }
 
 /** What the streaming agent message currently represents, so onAgentStreamDone knows what's next. */
-type StreamKind = 'opening' | 'setup' | 'response' | 'report';
+type StreamKind = 'opening' | 'setup' | 'response' | 'report' | 'timeup';
+
+/**
+ * Deadpan sign-off lines streamed once the clock hits zero, before the results modal appears.
+ * Plain ASCII, written in the same smug-interviewer voice as the rest of the transcript.
+ */
+const TIMEUP_MESSAGES: string[] = [
+    'Time. Pencils down. HR will be in touch.',
+    'That is time. Please step away from the keyboard, candidate.',
+    "Clock's out. We'll circle back on next steps, allegedly.",
+    'Sixty seconds. Stop typing. The rubric has already judged you.',
+];
 
 /** How many further prompt submissions pass before a launched swarm "reports back". */
 const REPORT_DUE_AFTER_PROMPTS = 2;
@@ -70,6 +81,8 @@ interface EngineState {
     typedCount: number;
     lastKeyWasError: boolean;
     remainingMs: number;
+    /** Current streak of consecutive correct keystrokes; reset on error and on run start only. */
+    streak: number;
 
     correctChars: number;
     errors: number;
@@ -110,6 +123,7 @@ function createIdleState(): EngineState {
         typedCount: 0,
         lastKeyWasError: false,
         remainingMs: GAME_DURATION_MS,
+        streak: 0,
         correctChars: 0,
         errors: 0,
         totalKeystrokes: 0,
@@ -183,6 +197,7 @@ class GameEngine {
             lastKeyWasError: s.lastKeyWasError,
             remainingMs: s.remainingMs,
             subagentCount: s.subagentCount,
+            streak: s.streak,
             stats: computeStats({
                 correctChars: s.correctChars,
                 errors: s.errors,
@@ -297,14 +312,30 @@ class GameEngine {
 
         if (this.state.remainingMs <= 0) {
             this.state.remainingMs = 0;
-            this.stopClock();
-            this.stopBurn();
-            this.state.phase = 'finished';
-            this.state.currentPrompt = null;
+            this.triggerTimeUp();
         }
 
         this.emit();
     };
+
+    /**
+     * Fires once when the clock hits zero: freezes the countdown/burn meter (stats stop moving),
+     * clears the in-progress prompt so no further input registers, and streams a deadpan
+     * "time's up" sign-off before the results modal appears (via `onAgentStreamDone`). Guarded
+     * against double-firing — both the tick path and the submit-flush path can observe
+     * `remainingMs <= 0`, but only the first call should push the sign-off message.
+     */
+    private triggerTimeUp(): void {
+        const s = this.state;
+        if (s.streamKind === 'timeup') {
+            return;
+        }
+        this.stopClock();
+        this.stopBurn();
+        s.currentPrompt = null;
+        const message = TIMEUP_MESSAGES[Math.floor(Math.random() * TIMEUP_MESSAGES.length)] ?? TIMEUP_MESSAGES[0]!;
+        this.pushStreamingAgentMessage(message, 'timeup');
+    }
 
     private pushStreamingAgentMessage(text: string, kind: StreamKind, beats?: ResponseBeat[]): void {
         const message: ChatMessage = { id: randomId(), role: 'agent', text, streaming: true };
@@ -357,7 +388,10 @@ class GameEngine {
         const finishedKind = s.streamKind;
         s.streamKind = null;
 
-        if (finishedKind === 'opening' || finishedKind === 'response' || finishedKind === 'report') {
+        if (finishedKind === 'timeup') {
+            // The deadpan sign-off has finished playing -> reveal the results modal.
+            s.phase = 'finished';
+        } else if (finishedKind === 'opening' || finishedKind === 'response' || finishedKind === 'report') {
             // A launched swarm may be due to "report back" before the next task.
             if (finishedKind === 'response') {
                 const dueIndex = s.pendingReports.findIndex((report) => s.promptsCompleted >= report.dueAtPrompts);
@@ -405,6 +439,7 @@ class GameEngine {
             s.typedCount += 1;
             s.correctChars += 1;
             s.totalKeystrokes += 1;
+            s.streak += 1;
             s.lastKeyWasError = false;
             if (this.errorFlashHandle !== null) {
                 clearTimeout(this.errorFlashHandle);
@@ -418,6 +453,7 @@ class GameEngine {
         } else {
             s.errors += 1;
             s.totalKeystrokes += 1;
+            s.streak = 0;
             this.flashError();
         }
 
@@ -454,8 +490,7 @@ class GameEngine {
 
         // The flush above may have consumed the last of the clock on the final keystroke.
         if (s.remainingMs <= 0) {
-            this.stopBurn();
-            s.phase = 'finished';
+            this.triggerTimeUp();
             this.emit();
             return;
         }
