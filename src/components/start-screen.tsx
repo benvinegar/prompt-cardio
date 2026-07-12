@@ -10,7 +10,7 @@ export interface StartScreenProps {
 const RULES: string[] = [
     'Your mission: make the AI burn as many tokens as possible. Speed feeds the fire.',
     'Prompt your AI copilot through the tasks by typing the ghost text.',
-    "2 minutes on the wall clock. It starts on your first keystroke — and the AI's theatrics run YOUR clock.",
+    "60 seconds of typing time. The clock pauses while the AI performs and while you read — it only runs while you type.",
     "Wrong keys don't advance. The last key sends it — no Enter needed.",
 ];
 

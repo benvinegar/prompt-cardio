@@ -1,16 +1,11 @@
 /**
  * Engine hook for Prompt Cardio. Owns the shuffled scenario queue, transcript, per-key
  * advance/error accounting, auto-submit on prompt completion, phase transitions, and final
- * stats. Two independent timers run here:
- *   - The wall clock (`remainingMs`, GAME_DURATION_MS budget) is armed by the first keystroke
- *     of the RUN and, once armed, ticks down continuously across every phase -- typing,
- *     streaming, thinking -- until it hits 0. It never pauses again. Reading the opening
- *     greeting before the player's very first keystroke is free; every reveal after that costs
- *     wall clock, even though the player isn't typing.
- *   - The typing timer (`activeTypingMs`) only accrues while `phase === 'typing'` AND the
- *     current prompt has been started (its own first keystroke), stopping at submit. This is
- *     what WPM is computed from, so it reflects true typing speed regardless of how much the
- *     agent's theatrics eat into the wall clock.
+ * stats. Timing: the clock (`remainingMs`, GAME_DURATION_MS of TYPING time) and the WPM timer
+ * (`activeTypingMs`) drain in lockstep, and only while `phase === 'typing'` AND the current
+ * prompt has been started (its first keystroke). Everything else is free: the agent's
+ * streaming/thinking theater and reading a fresh prompt cost nothing — the clock resumes the
+ * moment the player types a key.
  * The UI owns the char-by-char reveal animation of agent messages and reports completion via
  * `onAgentStreamDone()`.
  */
@@ -30,13 +25,13 @@ import {
     type Scenario,
 } from '@/game/types';
 
-/** Interval cadence for the master wall-clock/typing-timer tick, once armed. */
+/** Interval cadence for the master clock tick, once armed. */
 const TICK_MS = 60;
 /**
  * Random delay range (inclusive) for the fake "thinking" pause after submit — long enough to
  * pretend an LLM is on the other side. Skewed toward the short end (see
  * {@link randomThinkingDelayMs}) so most replies feel snappy-ish with the occasional 4s stall.
- * The wall clock keeps running through it: the copilot's dawdling is billed to the candidate.
+ * The clock is paused through it — the player can watch the theater guilt-free.
  */
 const THINKING_DELAY_MIN_MS = 1_000;
 const THINKING_DELAY_MAX_MS = 4_000;
@@ -84,7 +79,7 @@ const TIMEUP_MESSAGES: string[] = [
     'Time. Pencils down. HR will be in touch.',
     'That is time. Please step away from the keyboard, candidate.',
     "Clock's out. We'll circle back on next steps, allegedly.",
-    'Two minutes. Stop typing. The rubric has already judged you.',
+    'Sixty seconds. Stop typing. The rubric has already judged you.',
 ];
 
 /** How many further prompt submissions pass before a launched swarm "reports back". */
@@ -274,6 +269,7 @@ class GameEngine {
             lastKeyWasError: s.lastKeyWasError,
             remainingMs: s.remainingMs,
             clockStarted: s.clockStarted,
+            clockRunning: s.clockStarted && s.phase === 'typing' && s.promptStarted,
             subagentCount: s.subagentCount,
             streak: s.streak,
             stats: computeStats({
@@ -388,8 +384,12 @@ class GameEngine {
         const delta = now - this.lastTickAt;
         this.lastTickAt = now;
 
-        this.state.remainingMs = Math.max(0, this.state.remainingMs - delta);
+        // The clock only spends while the player is actually typing the current prompt: it
+        // pauses during the agent's streaming/thinking AND while the player reads a fresh
+        // prompt, resuming on that prompt's first keystroke. (remainingMs and activeTypingMs
+        // therefore drain in lockstep.)
         if (this.state.phase === 'typing' && this.state.promptStarted) {
+            this.state.remainingMs = Math.max(0, this.state.remainingMs - delta);
             this.state.activeTypingMs += delta;
         }
     }

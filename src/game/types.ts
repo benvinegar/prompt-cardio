@@ -4,14 +4,12 @@
  */
 
 /**
- * Total wall-clock budget per run, in ms. Starts counting down on the first keystroke of the
- * run and, once armed, runs continuously across every phase (typing, streaming, thinking) until
- * it hits 0 -- it never pauses again. This is distinct from `activeTypingMs` (see `GameStats`),
- * the separate typing-only timer that drives WPM: that one only accrues while the player is
- * actively typing the current prompt, so the agent's streaming/thinking theatrics cost the
- * player wall clock but never inflate (or deflate) their measured typing speed.
+ * Total TYPING-time budget per run, in ms. The clock pauses whenever the player isn't actively
+ * typing the current prompt — during the agent's streaming/thinking theater and while the
+ * player reads a fresh prompt — and resumes on each prompt's first keystroke. It drains in
+ * lockstep with `activeTypingMs` (see `GameStats`), the timer WPM is computed from.
  */
-export const GAME_DURATION_MS = 120_000;
+export const GAME_DURATION_MS = 60_000;
 
 /** Characters-per-token heuristic used for the joke "tokens/sec" stat. */
 export const CHARS_PER_TOKEN = 4;
@@ -19,11 +17,11 @@ export const CHARS_PER_TOKEN = 4;
 export type GamePhase =
     /** Start screen; nothing running. */
     | 'idle'
-    /** The fake agent is streaming a message (setup or response). Wall clock keeps running once armed. */
+    /** The fake agent is streaming a message (setup or response). Clock paused. */
     | 'streaming'
-    /** Player is typing the ghost prompt. Wall clock runs; the typing timer also accrues. */
+    /** Player is typing the ghost prompt. The clock drains once the prompt's first key lands. */
     | 'typing'
-    /** Prompt submitted; fake "thinking" spinner before the agent responds. Wall clock keeps running once armed. */
+    /** Prompt submitted; fake "thinking" spinner before the agent responds. Clock paused. */
     | 'thinking'
     /** Time expired; results are showing. */
     | 'finished';
@@ -146,13 +144,15 @@ export interface GameSnapshot {
     /** True for one frame-ish window after a wrong keystroke (UI shake/flash). */
     lastKeyWasError: boolean;
     /**
-     * Wall clock remaining, ms. Starts decreasing continuously once armed by the first keystroke
-     * of the run (see `clockStarted`) and never pauses again, across typing, streaming, and
-     * thinking alike.
+     * Typing time remaining, ms. Only drains while the player is actively typing the current
+     * prompt: it pauses during the agent's streaming/thinking AND while the player reads a
+     * fresh prompt, resuming on that prompt's first keystroke.
      */
     remainingMs: number;
-    /** True once the run's wall clock has been armed by the first keystroke; false only before it. */
+    /** True once the run's clock has been armed by the first keystroke; false only before it. */
     clockStarted: boolean;
+    /** True while the clock is actually draining (typing phase, current prompt started). */
+    clockRunning: boolean;
     /** Subagents currently "running" (never finish; each multiplies the token burn rate). */
     subagentCount: number;
     /**

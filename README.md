@@ -14,12 +14,11 @@ You're an engineering candidate being evaluated on your ability to vibe code. A 
 streams you a setup, then a ghost prompt appears in the composer — type it exactly to send it.
 The goal: burn as many tokens as possible. Tokens burned is your score.
 
-- **2 minutes on the wall clock.** It's armed by your first keystroke, then runs non-stop
-  through everything — typing, the agent's streaming replies, its fake "thinking" pauses. The
-  AI's theatrics run your clock, not a frozen one.
-- **WPM is measured separately.** A dedicated typing timer only counts time you're actually
-  typing the current prompt, so reading a setup line or watching the agent stall doesn't touch
-  your typing speed — it just eats into your 2 minutes.
+- **60 seconds of typing time.** The clock only drains while you're actually typing the
+  current prompt — it pauses during the agent's streaming replies, its fake "thinking" stalls,
+  and while you read a fresh prompt. It resumes the instant you press a key.
+- **WPM is honest.** It's computed from that same typing-only timer, so the agent's theatrics
+  never distort your measured speed.
 - **Wrong keys don't advance.** No backspacing — a bad keystroke just costs you.
 - **The last correct key auto-sends** the prompt, no Enter required.
 - **The burn rate compounds.** Every prompt you finish makes the copilot spend more
@@ -44,7 +43,7 @@ pnpm build      # static output in dist/
 Vite + React 19 + TanStack Router + Tailwind CSS 4, TypeScript strict throughout.
 
 - `src/game/types.ts` — shared contracts (phases, scenarios, stats)
-- `src/game/` — engine: state machine, the wall clock + separate active-typing clock, scoring
+- `src/game/` — engine: state machine, the typing-time clock, scoring
 - `src/data/` — scenarios (the funny prompts + replies), rank titles, greetings
 - `src/components/` — chat UI, streaming reveal, ghost-prompt composer, results modal
 

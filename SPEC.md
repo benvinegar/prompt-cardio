@@ -7,11 +7,10 @@ Vite + React 19 + TanStack Router + Tailwind CSS 4. No server, no persistence be
 
 ## Game loop
 
-Two independent timers drive the run: a **wall clock** (`remainingMs`, 120s budget) that, once
-armed, ticks down continuously across every phase and never pauses again, and a **typing timer**
-(`activeTypingMs`) that only accrues while the player is actively typing the current prompt. WPM
-is computed from the typing timer alone, so the agent's streaming/thinking theatrics cost the
-player wall clock but never distort their measured typing speed.
+One clock drives the run: a **typing-time budget** (`remainingMs`, 60s). It only drains while
+the player is actively typing the current prompt -- it pauses during the agent's
+streaming/thinking theater and while the player reads a fresh prompt, resuming on that prompt's
+first keystroke. `activeTypingMs` (what WPM is computed from) drains in lockstep with it.
 
 1. Start screen ("idle"). Big title, one-line pitch, START button. Explain: 2 minutes on the
    wall clock, armed by your first keystroke, running non-stop after that — including while the

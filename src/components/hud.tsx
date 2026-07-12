@@ -68,8 +68,10 @@ function MuteToggle() {
 
 export interface HudProps {
     remainingMs: number;
-    /** True once the run's wall clock has been armed by the first keystroke. */
+    /** True once the run's clock has been armed by the first keystroke. */
     clockStarted: boolean;
+    /** True while the clock is actually draining (typing the current prompt). */
+    clockRunning: boolean;
     wpm: number;
     accuracy: number;
     tokensBurned: number;
@@ -87,6 +89,7 @@ export interface HudProps {
 export function Hud({
     remainingMs,
     clockStarted,
+    clockRunning,
     wpm,
     accuracy,
     tokensBurned,
@@ -96,6 +99,7 @@ export function Hud({
 }: HudProps) {
     const isLow = clockStarted && remainingMs < LOW_TIME_THRESHOLD_MS;
     const showArmingHint = phase !== 'idle' && !clockStarted;
+    const showPausedHint = clockStarted && !clockRunning && phase !== 'idle' && phase !== 'finished';
     const comboTier = getComboTier(streak);
 
     return (
@@ -103,6 +107,7 @@ export function Hud({
             <span className="whitespace-normal">
                 /vibe-screen <span className="text-ink-faint">· wrong keys don't advance · last key sends</span>
                 {showArmingHint && <span className="text-ink-faint"> · [clock starts when you type]</span>}
+                {showPausedHint && <span className="text-ink-faint"> · [clock paused — read freely]</span>}
             </span>
             <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 {comboTier && (
