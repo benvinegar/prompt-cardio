@@ -4,6 +4,7 @@ import type { GameStats } from '@/game/types';
 import { formatTokensCompact, formatTokensFull } from '@/lib/format';
 import { loadPersonalBest, recordRunIfBest, type PersonalBest } from '@/lib/personal-best';
 import { buildShareText, downloadCardAsPng, shareResult } from '@/lib/share';
+import { TitleBorderPanel } from '@/components/title-border-panel';
 
 export interface ResultsModalProps {
     stats: GameStats;
@@ -17,6 +18,31 @@ const FAKE_DOLLARS_PER_MILLION_TOKENS = 23.7;
 function fakeCost(tokens: number): string {
     const dollars = (tokens / 1_000_000) * FAKE_DOLLARS_PER_MILLION_TOKENS;
     return `$${dollars.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/** A bracketed, borderless mono action for the results card footer, e.g. `[ share ]`. */
+function BracketButton({
+    onClick,
+    disabled,
+    ariaBusy,
+    children,
+}: {
+    onClick: () => void;
+    disabled?: boolean;
+    ariaBusy?: boolean;
+    children: string;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={disabled}
+            aria-busy={ariaBusy}
+            className="flex-1 border border-border-strong px-2 py-2 text-xs font-bold whitespace-nowrap text-accent transition-colors hover:border-accent hover:bg-accent-soft disabled:opacity-50 sm:text-sm"
+        >
+            [ {children} ]
+        </button>
+    );
 }
 
 /** Dark overlay + centered, screenshot-friendly card showing the final rank and stat grid. */
@@ -65,17 +91,17 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 font-mono backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
             aria-labelledby="results-title"
         >
-            <div className="relative w-full max-w-md animate-pop-in rounded-3xl border border-border-strong bg-bg-elevated p-6 shadow-2xl sm:p-8">
+            <div className="relative w-full max-w-md animate-pop-in">
                 <button
                     type="button"
                     onClick={onClose}
                     aria-label="Close results"
-                    className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full text-ink-dim transition-colors hover:bg-bg-panel hover:text-ink"
+                    className="absolute -top-3 -right-2 z-10 flex h-7 w-7 items-center justify-center text-ink-dim transition-colors hover:text-ink-bright"
                 >
                     <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
                         <path
@@ -87,123 +113,108 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                     </svg>
                 </button>
 
-                {/* Capture target for "Save card" — rank + stats only, no action buttons. */}
-                <div ref={cardRef}>
-                    {isNewPb && (
-                        <div className="mx-auto mb-4 flex w-fit animate-pulse items-center gap-1.5 rounded-full border border-accent-dim bg-accent-soft px-3 py-1 text-xs font-bold tracking-wide text-accent-bright uppercase">
-                            <span aria-hidden="true">✨</span> New record burn
-                        </div>
-                    )}
+                <TitleBorderPanel title="session summary" className="bg-bg">
+                    {/* Capture target for "Save card" — rank + stats only, no action buttons. Explicit
+                        bg-bg keeps the exported PNG's background matching the page instead of transparent. */}
+                    <div ref={cardRef} className="bg-bg">
+                        {isNewPb && (
+                            <p className="mb-3 text-center text-xs font-bold tracking-wide text-accent uppercase">
+                                ✨ new record burn
+                            </p>
+                        )}
 
-                    <div className="text-center">
-                        <div className="text-5xl">{rank.emoji}</div>
-                        <h1 id="results-title" className="mt-2 font-sans text-2xl font-bold text-ink">
-                            {rank.title}
-                        </h1>
-                        <p className="mt-1 text-sm text-ink-dim">{rank.blurb}</p>
-                        {!isNewPb && pb && (
-                            <p className="mt-2 text-xs text-ink-faint">
-                                Record burn: {formatTokensCompact(pb.tokensBurned)} tokens
+                        <div className="text-center">
+                            <div className="text-5xl">{rank.emoji}</div>
+                            <h1 id="results-title" className="mt-2 text-xl font-bold text-ink-bright">
+                                {rank.title}
+                            </h1>
+                            <p className="mt-1 text-sm text-ink-dim">{rank.blurb}</p>
+                            {!isNewPb && pb && (
+                                <p className="mt-2 text-xs text-ink-faint">
+                                    record burn: {formatTokensCompact(pb.tokensBurned)} tokens
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-center gap-1.5">
+                            {RANK_TITLES.map((title) => {
+                                const earned = title.title === rank.title;
+                                return (
+                                    <span
+                                        key={title.title}
+                                        title={`${title.title} (${title.minWpm}+ WPM)`}
+                                        className={
+                                            earned
+                                                ? 'rounded-full text-lg ring-1 ring-accent'
+                                                : 'rounded-full text-lg opacity-30 grayscale'
+                                        }
+                                    >
+                                        {title.emoji}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                        {nextRank && (
+                            <p className="mt-2 text-center text-xs text-ink-dim">
+                                +{nextRank.minWpm - stats.wpm} wpm to &ldquo;{nextRank.title}&rdquo;
+                            </p>
+                        )}
+
+                        <div className="mt-5 border-y border-border py-4 text-center">
+                            <div className="text-4xl font-bold text-accent tabular-nums sm:text-5xl">
+                                {formatTokensFull(stats.tokensBurned)}
+                            </div>
+                            <div className="mt-1 text-xs tracking-wide text-ink-dim uppercase">
+                                tokens burned by your copilot
+                            </div>
+                            <div className="mt-1 text-xs text-ink-faint">est. bill: {fakeCost(stats.tokensBurned)}</div>
+                        </div>
+
+                        <div className="grid grid-cols-2 divide-x divide-y divide-border border-b border-border">
+                            <div className="px-2 py-3 text-center">
+                                <div className="text-xl font-bold text-ink-bright tabular-nums">
+                                    {stats.accuracy}%
+                                </div>
+                                <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">accuracy</div>
+                            </div>
+
+                            <div className="px-2 py-3 text-center">
+                                <div className="text-xl font-bold text-ink-bright tabular-nums">{stats.wpm}</div>
+                                <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">wpm</div>
+                            </div>
+
+                            <div className="px-2 py-3 text-center">
+                                <div className="text-xl font-bold text-ink-bright tabular-nums">
+                                    {stats.tokensPerSecond}
+                                </div>
+                                <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">tok/s</div>
+                            </div>
+
+                            <div className="px-2 py-3 text-center">
+                                <div className="text-xl font-bold text-ink-bright tabular-nums">{stats.errors}</div>
+                                <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">errors</div>
+                            </div>
+                        </div>
+
+                        {stats.subagentCount > 0 && (
+                            <p className="mt-3 text-center text-xs text-ink-faint">
+                                * {stats.subagentCount} subagents are still running. this is now your problem.
                             </p>
                         )}
                     </div>
 
-                    <div className="mt-4 flex items-center justify-center gap-1.5 rounded-2xl border border-border bg-bg-panel px-3 py-2.5">
-                        {RANK_TITLES.map((title) => {
-                            const earned = title.title === rank.title;
-                            return (
-                                <span
-                                    key={title.title}
-                                    title={`${title.title} (${title.minWpm}+ WPM)`}
-                                    className={
-                                        earned
-                                            ? 'flex h-7 w-7 items-center justify-center rounded-full bg-accent text-base shadow-[0_0_12px_-2px_var(--color-accent)]'
-                                            : 'flex h-7 w-7 items-center justify-center rounded-full text-base opacity-30 grayscale'
-                                    }
-                                >
-                                    {title.emoji}
-                                </span>
-                            );
-                        })}
+                    <div className="mt-5 flex gap-2">
+                        <BracketButton onClick={handleShare}>{shareState === 'copied' ? 'copied!' : 'share'}</BracketButton>
+                        <BracketButton
+                            onClick={handleSaveCard}
+                            disabled={saveState === 'saving'}
+                            ariaBusy={saveState === 'saving'}
+                        >
+                            {saveState === 'saving' ? 'saving…' : saveState === 'error' ? 'retry save' : 'save card'}
+                        </BracketButton>
+                        <BracketButton onClick={onPlayAgain}>run it back</BracketButton>
                     </div>
-                    {nextRank && (
-                        <p className="mt-2 text-center text-xs text-ink-dim">
-                            +{nextRank.minWpm - stats.wpm} WPM to &ldquo;{nextRank.title}&rdquo;
-                        </p>
-                    )}
-
-                    <div className="mt-4 rounded-2xl border border-accent-dim bg-accent-soft px-4 py-3 text-center">
-                        <div className="font-mono text-4xl font-bold tabular-nums text-accent-bright sm:text-5xl">
-                            {formatTokensFull(stats.tokensBurned)}
-                        </div>
-                        <div className="mt-1 text-xs tracking-wide text-ink-dim uppercase">
-                            tokens burned by your copilot
-                        </div>
-                        <div className="mt-1 text-xs text-ink-faint">est. bill: {fakeCost(stats.tokensBurned)}</div>
-                    </div>
-
-                    <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-2.5 text-center">
-                            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
-                                {stats.accuracy}%
-                            </div>
-                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Accuracy</div>
-                        </div>
-
-                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-2.5 text-center">
-                            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">{stats.wpm}</div>
-                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">WPM</div>
-                        </div>
-
-                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-2.5 text-center">
-                            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
-                                {stats.tokensPerSecond}
-                            </div>
-                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">
-                                est. output speed (tok/s)
-                            </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-2.5 text-center">
-                            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
-                                {stats.errors}
-                            </div>
-                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Errors</div>
-                        </div>
-                    </div>
-
-                    {stats.subagentCount > 0 && (
-                        <p className="mt-2.5 text-center text-xs text-ink-faint">
-                            * {stats.subagentCount} subagents are still running. This is now your problem.
-                        </p>
-                    )}
-                </div>
-
-                <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
-                    <button
-                        type="button"
-                        onClick={handleShare}
-                        className="flex-1 rounded-full border border-border-strong bg-bg-panel px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-bg-elevated"
-                    >
-                        {shareState === 'copied' ? 'Copied!' : 'Share'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={handleSaveCard}
-                        disabled={saveState === 'saving'}
-                        aria-busy={saveState === 'saving'}
-                        className="flex-1 rounded-full border border-border-strong bg-bg-panel px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-bg-elevated disabled:opacity-60"
-                    >
-                        {saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Retry save' : 'Save card'}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onPlayAgain}
-                        className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_20px_-4px_var(--color-accent)] transition-colors hover:bg-accent-bright"
-                    >
-                        Run it back
-                    </button>
-                </div>
+                </TitleBorderPanel>
             </div>
         </div>
     );

@@ -5,16 +5,19 @@ export interface TypingComposerProps {
 }
 
 /**
- * The chat-composer-styled ghost prompt: typed characters render bright, the current character
- * is dim with an accent highlight + blinking caret, and untyped characters render faint.
- * Flashes red and shakes briefly on a wrong keystroke. Reserves room for ~4 lines of text so
- * the composer never resizes as prompts change. The last correct keystroke auto-submits.
+ * The terminal-styled composer: a full-width strip between two hairline rules with an accent
+ * `>` caret prefix. Typed characters render bright, the current character renders as a blinking
+ * block cursor (accent, flipping to error-red on a wrong keystroke), and untyped characters
+ * render faint. Reserves a fixed height so the composer never resizes as prompts change. The
+ * last correct keystroke auto-submits.
  */
 export function TypingComposer({ prompt, typedCount, lastKeyWasError }: TypingComposerProps) {
     if (prompt === null) {
         return (
-            <div className="rounded-2xl border border-border bg-bg-panel px-4 py-4 font-mono text-base sm:px-5 sm:text-lg">
-                <p className="min-h-[6.5em] leading-relaxed text-ink-faint">waiting for your next task...</p>
+            <div className="border-t border-b border-border py-3 font-mono text-base sm:text-lg">
+                <p className="min-h-[4.5em] leading-relaxed text-ink-faint">
+                    <span className="text-accent">&gt;</span> waiting for your next task...
+                </p>
             </div>
         );
     }
@@ -26,25 +29,23 @@ export function TypingComposer({ prompt, typedCount, lastKeyWasError }: TypingCo
     return (
         <div
             key={lastKeyWasError ? `error-${typedCount}` : undefined}
-            className={`relative overflow-hidden rounded-2xl border px-4 py-4 font-mono text-base transition-shadow sm:px-5 sm:text-lg ${
-                lastKeyWasError ? 'animate-shake border-danger bg-danger-soft' : 'border-border bg-bg-panel'
+            className={`border-t border-b border-border py-3 font-mono text-base sm:text-lg ${
+                lastKeyWasError ? 'animate-shake' : ''
             }`}
         >
-            <p className="min-h-[6.5em] break-words whitespace-pre-wrap leading-relaxed">
-                <span className="text-ink">{typed}</span>
+            <p className="min-h-[4.5em] break-words whitespace-pre-wrap leading-relaxed">
+                <span className="text-accent">&gt;</span> <span className="text-ink-bright">{typed}</span>
                 {current && (
-                    <span
-                        className={`relative rounded-[2px] underline decoration-2 underline-offset-4 ${
-                            lastKeyWasError
-                                ? 'bg-danger text-white decoration-danger'
-                                : 'bg-accent/15 text-ink-dim decoration-accent-bright'
-                        }`}
-                    >
+                    <span className="relative inline-block">
+                        <span className="text-ink-faint">{current}</span>
                         <span
                             aria-hidden="true"
-                            className="animate-caret-blink absolute inset-y-0 -left-px w-0.5 rounded-full bg-accent-bright"
-                        />
-                        {current}
+                            className={`absolute inset-0 flex animate-caret-blink items-center justify-center ${
+                                lastKeyWasError ? 'bg-danger text-bg' : 'bg-accent text-bg'
+                            }`}
+                        >
+                            {current}
+                        </span>
                     </span>
                 )}
                 <span className="text-ink-faint">{rest}</span>

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ResponseBeat } from '@/game/types';
+import { BrailleSpinner } from '@/components/braille-spinner';
 import { StreamingText } from '@/components/streaming-text';
+import { AgentBulletLine } from '@/components/terminal-line';
 
 /** Spinner time for tool beats that don't specify their own duration. */
 const DEFAULT_TOOL_MS = 700;
@@ -11,62 +13,80 @@ const THINKING_MS_PER_CHAR = 8;
 /** Final reply text reveals slightly faster than plain messages to keep total playtime snappy. */
 const TEXT_MS_PER_CHAR = 12;
 
-function CheckIcon() {
-    return (
-        <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 shrink-0 text-success" aria-hidden="true">
-            <path d="m5 13 4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-    );
+/**
+ * Splits a beat's `detail` string into the short command shown in parens next to the tool name
+ * and the longer result note shown on the `⎿` line beneath it. Scenario data writes details as
+ * `"<command>  (<result note>)"`; details without that trailing parenthetical (e.g. a bare `mv`
+ * command) fall back to a plain "done" result line.
+ */
+function splitDetail(detail: string): { command: string; note: string | null } {
+    const match = detail.match(/^(.*?)\s{2,}\((.*)\)$/);
+    if (match) {
+        return { command: match[1]!.trim(), note: match[2]!.trim() };
+    }
+    return { command: detail.replace(/\s{2,}/g, ' ').trim(), note: null };
 }
 
-function Spinner() {
-    return (
-        <span
-            aria-hidden="true"
-            className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-[1.5px] border-border-strong border-t-accent-bright"
-        />
-    );
-}
-
-/** A fake tool-call row: spinner while "running", then a green check with the tool name + detail. */
+/**
+ * A fake tool-call line: `⏺ Name(command)`, spinner while "running", a green bullet once done,
+ * and an indented `⎿` result line that only reveals on completion so it doesn't spoil the
+ * punchline before the beat "finishes".
+ */
 function ToolRow({ name, detail, active }: { name: string; detail: string; active: boolean }) {
+    const { command, note } = splitDetail(detail);
     return (
-        <div className="flex min-w-0 items-start gap-2 rounded-lg border border-border bg-bg-elevated px-2.5 py-1.5 font-mono text-[13px]">
-            <span className="mt-0.5 flex shrink-0">{active ? <Spinner /> : <CheckIcon />}</span>
-            <span className="shrink-0 font-semibold text-ink">{name}</span>
-            <span className="min-w-0 break-words text-ink-dim">{detail}</span>
+        <div className="flex animate-fade-up flex-col gap-0.5 text-[15px] leading-relaxed">
+            <div className="flex min-w-0 items-baseline gap-1.5">
+                {active ? (
+                    <BrailleSpinner className="shrink-0 text-accent" />
+                ) : (
+                    <span className="shrink-0 text-success">⏺</span>
+                )}
+                <span className="shrink-0 font-bold text-ink-bright">{name}</span>
+                <span className="min-w-0 break-words text-ink-dim">({command})</span>
+            </div>
+            {!active && (
+                <div className="pl-5 break-words text-ink-dim">
+                    <span className="text-ink-faint">⎿ </span>
+                    {note ?? 'done'}
+                </div>
+            )}
         </div>
     );
 }
 
 /**
- * A "launching subagents" row. Unlike tool rows this never resolves to a checkmark —
- * the spinner rips forever, because the subagents are, of course, still working.
+ * A "launching subagents" line. Unlike tool rows this never resolves to a checkmark — the
+ * spinner rips forever and the result line always reads "still running," because the subagents
+ * are, of course, never coming back.
  */
 function SubagentsRow({ count, detail }: { count: number; detail: string }) {
     return (
-        <div className="flex min-w-0 items-start gap-2 rounded-lg border border-accent-dim bg-accent-soft px-2.5 py-1.5 font-mono text-[13px]">
-            <span className="mt-0.5 flex shrink-0">
-                <Spinner />
-            </span>
-            <span className="shrink-0 font-semibold text-accent-bright">
-                Agents <span className="tabular-nums">x{count}</span>
-            </span>
-            <span className="min-w-0 break-words text-ink-dim">{detail}</span>
+        <div className="flex animate-fade-up flex-col gap-0.5 text-[15px] leading-relaxed">
+            <div className="flex min-w-0 items-baseline gap-1.5">
+                <BrailleSpinner className="shrink-0 text-accent" />
+                <span className="shrink-0 font-bold text-ink-bright">Task</span>
+                <span className="min-w-0 break-words text-ink-dim">
+                    ({count} subagents: {detail})
+                </span>
+            </div>
+            <div className="pl-5 break-words text-ink-dim">
+                <span className="text-ink-faint">⎿ </span>
+                still running <span className="text-ink-faint">· they will not be coming back</span>
+            </div>
         </div>
     );
 }
 
-/** A fake chain-of-thought block: dim italic text behind a "Thinking" label, streamed fast. */
+/** A fake chain-of-thought line: dim italic text behind an accent `✻ Thinking… ` prefix, streamed fast. */
 function ThinkingBlock({ text, active, onDone }: { text: string; active: boolean; onDone: () => void }) {
     return (
-        <div className="border-l-2 border-border-strong pl-3">
-            <div className={`mb-0.5 text-xs font-medium text-ink-faint ${active ? 'animate-pulse' : ''}`}>
-                Thinking
-            </div>
-            <div className="text-[13px] leading-relaxed text-ink-dim italic">
+        <div className="flex animate-fade-up gap-2 text-[15px] leading-relaxed text-ink-dim italic">
+            <span className="not-italic shrink-0 text-accent">✻</span>
+            <span className="min-w-0 break-words">
+                Thinking…{' '}
                 <StreamingText text={text} streaming={active} onDone={onDone} msPerChar={THINKING_MS_PER_CHAR} />
-            </div>
+            </span>
         </div>
     );
 }
@@ -123,14 +143,14 @@ export function AgentResponseBeats({ beats, streaming, onDone }: AgentResponseBe
                         return <SubagentsRow key={index} count={beat.count} detail={beat.detail} />;
                     case 'text':
                         return (
-                            <div key={index}>
+                            <AgentBulletLine key={index}>
                                 <StreamingText
                                     text={beat.text}
                                     streaming={active}
                                     onDone={advance}
                                     msPerChar={TEXT_MS_PER_CHAR}
                                 />
-                            </div>
+                            </AgentBulletLine>
                         );
                 }
             })}

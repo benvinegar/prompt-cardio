@@ -15,8 +15,8 @@ const NAVIGATION_KEYS = new Set(['Enter', ' ', 'Spacebar', "'", '"', '/', 'Tab',
 const TIME_LOW_THRESHOLD_MS = 10_000;
 
 /**
- * The single route component. Composes the start screen, chat transcript, HUD, typing
- * composer, and results modal around the `useGame` engine hook, and wires the window-level
+ * The single route component. Composes the start screen, terminal transcript, typing composer,
+ * status bar, and results modal around the `useGame` engine hook, and wires the window-level
  * keydown listener that drives typing during the `typing` phase.
  */
 export function GameScreen() {
@@ -128,20 +128,9 @@ export function GameScreen() {
     }
 
     return (
-        <div className="flex h-dvh flex-col overflow-hidden bg-bg">
-            <Hud
-                remainingMs={remainingMs}
-                clockStarted={clockStarted}
-                wpm={stats.wpm}
-                accuracy={stats.accuracy}
-                tokensBurned={stats.tokensBurned}
-                subagentCount={snapshot.subagentCount}
-                streak={snapshot.streak}
-                phase={phase}
-            />
-
-            <div ref={transcriptRef} className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-                <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+        <div className="flex h-dvh flex-col overflow-hidden bg-bg font-mono">
+            <div ref={transcriptRef} className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-4 pt-5 pb-2 sm:px-6">
+                <div className="mx-auto flex w-full max-w-3xl flex-col gap-3">
                     {messages.map((message) => (
                         <MessageBubble
                             key={message.id}
@@ -153,13 +142,24 @@ export function GameScreen() {
                 </div>
             </div>
 
-            <div className="border-t border-border bg-bg-elevated/80 px-4 py-4 backdrop-blur-sm sm:px-6">
-                <div className="mx-auto w-full max-w-2xl">
+            <div className="shrink-0 px-4 sm:px-6">
+                <div className="mx-auto w-full max-w-3xl">
                     <TypingComposer
                         prompt={phase === 'typing' ? currentPrompt : null}
                         typedCount={typedCount}
                         lastKeyWasError={lastKeyWasError}
                     />
+                    <Hud
+                        remainingMs={remainingMs}
+                        clockStarted={clockStarted}
+                        wpm={stats.wpm}
+                        accuracy={stats.accuracy}
+                        tokensBurned={stats.tokensBurned}
+                        subagentCount={snapshot.subagentCount}
+                        streak={snapshot.streak}
+                        phase={phase}
+                    />
+                    <p className="pb-3 text-[11px] text-ink-faint">? for nothing · esc will not save you</p>
                 </div>
             </div>
 

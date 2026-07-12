@@ -1,26 +1,38 @@
-function SparkIcon() {
-    return (
-        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-accent-bright" aria-hidden="true">
-            <path
-                d="M12 2.5 14 9.5 21 12 14 14.5 12 21.5 10 14.5 3 12 10 9.5 12 2.5Z"
-                fill="currentColor"
-            />
-        </svg>
-    );
-}
+import { useEffect, useState } from 'react';
+import { BrailleSpinner } from '@/components/braille-spinner';
 
-/** A "..." typing indicator bubble shown while the fake agent is "thinking" before it replies. */
+/** Cycling status words shown next to the spinner, in the voice of a real agent CLI's status line. */
+const GERUNDS: string[] = [
+    'Vibing',
+    'Pondering',
+    'Percolating',
+    'Manifesting',
+    'Yak-shaving',
+    'Overthinking',
+    'Summoning',
+    'Rationalizing',
+    'Improvising',
+    'Freestyling',
+];
+
+/** How often the status word cycles to the next gerund. */
+const CYCLE_MS = 1800;
+
+/** A dim status line shown while the fake agent "thinks" before it replies: a braille spinner plus a cycling gerund. */
 export function ThinkingIndicator() {
+    const [index, setIndex] = useState(() => Math.floor(Math.random() * GERUNDS.length));
+
+    useEffect(() => {
+        const id = window.setInterval(() => {
+            setIndex((current) => (current + 1) % GERUNDS.length);
+        }, CYCLE_MS);
+        return () => window.clearInterval(id);
+    }, []);
+
     return (
-        <div className="flex w-full animate-fade-up items-start gap-2.5">
-            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-bg-elevated">
-                <SparkIcon />
-            </div>
-            <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm border border-border bg-bg-panel px-4 py-3">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-ink-dim [animation-delay:-0.3s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-ink-dim [animation-delay:-0.15s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-ink-dim" />
-            </div>
+        <div className="flex animate-fade-up items-center gap-2 text-[15px] text-ink-dim">
+            <BrailleSpinner className="text-accent" />
+            <span>{GERUNDS[index]}…</span>
         </div>
     );
 }
