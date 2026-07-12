@@ -38,7 +38,7 @@ export function GameScreen() {
             if (NAVIGATION_KEYS.has(event.key)) {
                 event.preventDefault();
             }
-            handleKey(event.key);
+            handleKey(event.key, event.isTrusted);
         };
 
         window.addEventListener('keydown', onKeyDown);

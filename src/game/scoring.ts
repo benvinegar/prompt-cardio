@@ -14,6 +14,7 @@ export interface ComputeStatsInput {
     activeTypingMs: number;
     tokensBurned: number;
     subagentCount: number;
+    botVerdict: 'synthetic' | 'robotic' | null;
 }
 
 /**
@@ -23,8 +24,16 @@ export interface ComputeStatsInput {
  * numbers; `tokensPerSecond` is rounded to one decimal place.
  */
 export function computeStats(input: ComputeStatsInput): GameStats {
-    const { correctChars, errors, totalKeystrokes, promptsCompleted, activeTypingMs, tokensBurned, subagentCount } =
-        input;
+    const {
+        correctChars,
+        errors,
+        totalKeystrokes,
+        promptsCompleted,
+        activeTypingMs,
+        tokensBurned,
+        subagentCount,
+        botVerdict,
+    } = input;
 
     const activeMinutes = activeTypingMs / 60_000;
     const activeSeconds = activeTypingMs / 1_000;
@@ -45,5 +54,6 @@ export function computeStats(input: ComputeStatsInput): GameStats {
         activeTypingMs,
         tokensBurned: Math.floor(tokensBurned),
         subagentCount,
+        botVerdict,
     };
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { SHAME_VERDICTS } from '@/data/shame-titles';
 import { getRankForWpm, RANK_TITLES } from '@/data/titles';
 import type { GameStats } from '@/game/types';
 import { formatTokensCompact, formatTokensFull } from '@/lib/format';
@@ -52,25 +53,38 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
     const [pbResult, setPbResult] = useState<{ pb: PersonalBest; isNew: boolean } | null>(null);
     const cardRef = useRef<HTMLDivElement>(null);
 
+    // A flagged run (`botVerdict` set) shows a shame verdict instead of the normal WPM rank, and
+    // never records a personal best -- the rank ladder / PB machinery below is entirely bypassed.
+    const isDisqualified = stats.botVerdict !== null;
+    const shameVerdict = stats.botVerdict !== null ? SHAME_VERDICTS[stats.botVerdict] : null;
+
     const rank = getRankForWpm(stats.wpm);
     const rankIndex = RANK_TITLES.findIndex((title) => title.title === rank.title);
     const nextRank = rankIndex >= 0 && rankIndex < RANK_TITLES.length - 1 ? RANK_TITLES[rankIndex + 1] : null;
 
+    const displayEmoji = shameVerdict?.emoji ?? rank.emoji;
+    const displayTitle = shameVerdict?.title ?? rank.title;
+    const displayBlurb = shameVerdict?.blurb ?? rank.blurb;
+
     // Record this run against the stored personal best exactly once, for the run this modal is
     // displaying. `stats` is fixed for the lifetime of the modal (a new run remounts it). The ref
     // guard keeps StrictMode's double-invoked effect from recording twice (the second record
-    // would see the just-saved PB and wrongly report isNew=false).
+    // would see the just-saved PB and wrongly report isNew=false). Disqualified runs never touch
+    // the stored PB -- cheating yourself out of a real record isn't a record.
     const recordedRef = useRef<{ pb: PersonalBest; isNew: boolean } | null>(null);
     useEffect(() => {
+        if (isDisqualified) {
+            return;
+        }
         recordedRef.current ??= recordRunIfBest(stats);
         setPbResult(recordedRef.current);
     }, []);
 
-    const isNewPb = pbResult?.isNew ?? false;
+    const isNewPb = !isDisqualified && (pbResult?.isNew ?? false);
     const pb = pbResult?.pb ?? loadPersonalBest();
 
     const handleShare = () => {
-        const text = buildShareText(stats, rank.title);
+        const text = buildShareText(stats, displayTitle, isDisqualified);
         void shareResult(text).then((result) => {
             if (result === 'copied') {
                 setShareState('copied');
@@ -124,37 +138,39 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                         )}
 
                         <div className="text-center">
-                            <div className="text-5xl">{rank.emoji}</div>
+                            <div className="text-5xl">{displayEmoji}</div>
                             <h1 id="results-title" className="mt-2 text-xl font-bold text-ink-bright">
-                                {rank.title}
+                                {displayTitle}
                             </h1>
-                            <p className="mt-1 text-sm text-ink-dim">{rank.blurb}</p>
-                            {!isNewPb && pb && (
+                            <p className="mt-1 text-sm text-ink-dim">{displayBlurb}</p>
+                            {!isDisqualified && !isNewPb && pb && (
                                 <p className="mt-2 text-xs text-ink-faint">
                                     record burn: {formatTokensCompact(pb.tokensBurned)} tokens
                                 </p>
                             )}
                         </div>
 
-                        <div className="mt-4 flex items-center justify-center gap-1.5">
-                            {RANK_TITLES.map((title) => {
-                                const earned = title.title === rank.title;
-                                return (
-                                    <span
-                                        key={title.title}
-                                        title={`${title.title} (${title.minWpm}+ WPM)`}
-                                        className={
-                                            earned
-                                                ? 'rounded-full text-lg ring-1 ring-accent'
-                                                : 'rounded-full text-lg opacity-30 grayscale'
-                                        }
-                                    >
-                                        {title.emoji}
-                                    </span>
-                                );
-                            })}
-                        </div>
-                        {nextRank && (
+                        {!isDisqualified && (
+                            <div className="mt-4 flex items-center justify-center gap-1.5">
+                                {RANK_TITLES.map((title) => {
+                                    const earned = title.title === rank.title;
+                                    return (
+                                        <span
+                                            key={title.title}
+                                            title={`${title.title} (${title.minWpm}+ WPM)`}
+                                            className={
+                                                earned
+                                                    ? 'rounded-full text-lg ring-1 ring-accent'
+                                                    : 'rounded-full text-lg opacity-30 grayscale'
+                                            }
+                                        >
+                                            {title.emoji}
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {!isDisqualified && nextRank && (
                             <p className="mt-2 text-center text-xs text-ink-dim">
                                 +{nextRank.minWpm - stats.wpm} wpm to &ldquo;{nextRank.title}&rdquo;
                             </p>
@@ -199,6 +215,11 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                         {stats.subagentCount > 0 && (
                             <p className="mt-3 text-center text-xs text-ink-faint">
                                 * {stats.subagentCount} subagents are still running. this is now your problem.
+                            </p>
+                        )}
+                        {isDisqualified && (
+                            <p className="mt-3 text-center text-xs text-ink-faint">
+                                * this run was disqualified. the transcript has been forwarded to compliance.
                             </p>
                         )}
                     </div>

@@ -57,8 +57,12 @@ export interface UseGameReturn {
     start(): void;
     /** Back to idle. */
     reset(): void;
-    /** Raw `KeyboardEvent.key` during 'typing'. */
-    handleKey(key: string): void;
+    /**
+     * Raw `KeyboardEvent.key` during 'typing'. `trusted` should be the originating event's
+     * `isTrusted` flag (defaults to `true` for callers that don't have one) -- it feeds the
+     * synthetic-input anti-cheat check, see `EngineState.untrustedKeystrokes`.
+     */
+    handleKey(key: string, trusted?: boolean): void;
     /** UI calls when the streaming agent bubble finishes revealing. */
     onAgentStreamDone(): void;
 }
@@ -106,6 +110,23 @@ interface EngineState {
     tokensBurned: number;
     subagentCount: number;
 
+    /**
+     * Count of printable keystrokes (post length-1 filter) whose originating `KeyboardEvent` was
+     * NOT trusted (`isTrusted: false`) -- i.e. dispatched by a script/extension rather than real
+     * hardware input. Drives the `'synthetic'` anti-cheat verdict.
+     */
+    untrustedKeystrokes: number;
+    /** `Date.now()` of the last printable keystroke, reset to null at each new prompt's start. */
+    lastKeyTime: number | null;
+    /** Count of inter-keystroke intervals folded into the Welford running mean/variance below. */
+    intervalCount: number;
+    /** Welford running mean of inter-keystroke intervals (ms), excluding outliers > 2000ms. */
+    intervalMean: number;
+    /** Welford running sum-of-squared-deviations for inter-keystroke intervals; variance = M2 / count. */
+    intervalM2: number;
+    /** Anti-cheat verdict, computed once when the run ends. See `GameStats.botVerdict`. */
+    botVerdict: 'synthetic' | 'robotic' | null;
+
     /** Shuffled queue of scenarios; reshuffled and continued when exhausted. */
     queue: Scenario[];
     /** Index of the scenario currently being played (its prompt is `currentPrompt`). */
@@ -150,6 +171,12 @@ function createIdleState(): EngineState {
         activeTypingMs: 0,
         tokensBurned: 0,
         subagentCount: 0,
+        untrustedKeystrokes: 0,
+        lastKeyTime: null,
+        intervalCount: 0,
+        intervalMean: 0,
+        intervalM2: 0,
+        botVerdict: null,
         queue: [],
         queueIndex: -1,
         streamKind: null,
@@ -228,6 +255,7 @@ class GameEngine {
                 activeTypingMs: s.activeTypingMs,
                 tokensBurned: s.tokensBurned,
                 subagentCount: s.subagentCount,
+                botVerdict: s.botVerdict,
             }),
         };
     }
@@ -370,6 +398,7 @@ class GameEngine {
         }
         s.remainingMs = 0;
         s.currentPrompt = null;
+        s.botVerdict = this.classifyBotVerdict();
 
         // A response/setup/report message may be mid-reveal in the UI. Finalize it in place so
         // the transcript doesn't leave a permanently-streaming bubble, but skip the normal
@@ -387,6 +416,41 @@ class GameEngine {
 
         const message = TIMEUP_MESSAGES[Math.floor(Math.random() * TIMEUP_MESSAGES.length)] ?? TIMEUP_MESSAGES[0]!;
         this.pushStreamingAgentMessage(message, 'timeup');
+    }
+
+    /**
+     * Classifies the just-finished run as `'synthetic'`, `'robotic'`, or `null` (ordinary human
+     * play). `'synthetic'` fires on more than 10 untrusted (JS-dispatched) printable keystrokes --
+     * a strong signal of an extension/console script driving the game. `'robotic'` fires on
+     * inhumanly fast-and-consistent cadence: wpm >= 250 with at least 60 sampled inter-key
+     * intervals and a stddev under 15ms, or wpm >= 350 outright regardless of variance (fast
+     * enough that consistency stops mattering). Called once, from `triggerTimeUp`.
+     */
+    private classifyBotVerdict(): 'synthetic' | 'robotic' | null {
+        const s = this.state;
+        if (s.untrustedKeystrokes > 10) {
+            return 'synthetic';
+        }
+
+        const { wpm } = computeStats({
+            correctChars: s.correctChars,
+            errors: s.errors,
+            totalKeystrokes: s.totalKeystrokes,
+            promptsCompleted: s.promptsCompleted,
+            activeTypingMs: s.activeTypingMs,
+            tokensBurned: s.tokensBurned,
+            subagentCount: s.subagentCount,
+            botVerdict: null,
+        });
+
+        if (wpm >= 350) {
+            return 'robotic';
+        }
+        const stddev = s.intervalCount > 0 ? Math.sqrt(s.intervalM2 / s.intervalCount) : Infinity;
+        if (wpm >= 250 && s.intervalCount >= 60 && stddev < 15) {
+            return 'robotic';
+        }
+        return null;
     }
 
     private pushStreamingAgentMessage(text: string, kind: StreamKind, beats?: ResponseBeat[]): void {
@@ -467,13 +531,16 @@ class GameEngine {
             s.typedCount = 0;
             s.lastKeyWasError = false;
             s.promptStarted = false;
+            // Reset cadence tracking at the new prompt's start so the reading gap since the
+            // previous prompt's last keystroke doesn't get folded in as an inter-key interval.
+            s.lastKeyTime = null;
             this.enterTyping();
         }
 
         this.emit();
     };
 
-    handleKey = (key: string): void => {
+    handleKey = (key: string, trusted: boolean = true): void => {
         const s = this.state;
         if (s.phase !== 'typing' || s.currentPrompt === null) {
             return;
@@ -483,6 +550,28 @@ class GameEngine {
         if (key.length > 1) {
             return;
         }
+
+        // Anti-cheat: a printable keystroke whose originating event wasn't trusted (isTrusted:
+        // false) means it was dispatched by a script/extension rather than real hardware input.
+        if (!trusted) {
+            s.untrustedKeystrokes += 1;
+        }
+
+        // Cadence tracking: fold this keystroke's interval since the last one (within the
+        // current prompt) into the running Welford mean/variance, ignoring outlier gaps (e.g.
+        // a pause to re-read the prompt) longer than 2s so they don't wash out real cadence.
+        const now = Date.now();
+        if (s.lastKeyTime !== null) {
+            const interval = now - s.lastKeyTime;
+            if (interval <= 2000) {
+                s.intervalCount += 1;
+                const delta = interval - s.intervalMean;
+                s.intervalMean += delta / s.intervalCount;
+                const delta2 = interval - s.intervalMean;
+                s.intervalM2 += delta * delta2;
+            }
+        }
+        s.lastKeyTime = now;
 
         // Arms the run-level wall clock on the very first keystroke of the whole run (a no-op
         // after that -- it never re-arms per prompt). Marks that typing has begun on THIS
@@ -613,7 +702,7 @@ export function useGame(): UseGameReturn {
 
     const start = useCallback(() => engine.start(), [engine]);
     const reset = useCallback(() => engine.reset(), [engine]);
-    const handleKey = useCallback((key: string) => engine.handleKey(key), [engine]);
+    const handleKey = useCallback((key: string, trusted?: boolean) => engine.handleKey(key, trusted), [engine]);
     const onAgentStreamDone = useCallback(() => engine.onAgentStreamDone(), [engine]);
 
     return useMemo(

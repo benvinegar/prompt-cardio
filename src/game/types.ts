@@ -119,6 +119,13 @@ export interface GameStats {
     tokensBurned: number;
     /** Subagents "running" by the end of the run. */
     subagentCount: number;
+    /**
+     * Anti-cheat verdict computed once at run end: `'synthetic'` when a suspicious number of
+     * JS-dispatched (non-trusted) keystrokes were observed, `'robotic'` when typing speed/cadence
+     * is inhumanly fast and/or consistent, or `null` for an ordinary human run. When set, the UI
+     * shows a shame verdict instead of the normal WPM rank and skips personal-best recording.
+     */
+    botVerdict: 'synthetic' | 'robotic' | null;
 }
 
 /** Everything the UI needs to render a frame of the game. */

@@ -19,9 +19,14 @@ function fakeCost(tokens: number): string {
 
 /**
  * Builds the shareable brag text, leading with the burn total (the actual score) since that's
- * the joke, then the rank verdict and typing stats as supporting detail.
+ * the joke, then the rank verdict and typing stats as supporting detail. When `disqualified` is
+ * true (the run was flagged by the anti-cheat detector), leads with the shame verdict instead --
+ * still shareable, just a different kind of brag.
  */
-export function buildShareText(stats: GameStats, rankTitle: string): string {
+export function buildShareText(stats: GameStats, rankTitle: string, disqualified?: boolean): string {
+    if (disqualified) {
+        return `I got caught automating my vibe coding interview — verdict: "${rankTitle}". ${formatTokensFull(stats.tokensBurned)} tokens burned for nothing. Can you cheat better?`;
+    }
     const subagents =
         stats.subagentCount > 0 ? ` ${stats.subagentCount} subagents still running.` : '';
     return `I made my copilot burn ${formatTokensFull(stats.tokensBurned)} tokens (est. ${fakeCost(stats.tokensBurned)}) in a 2 minute interview — "${rankTitle}", ${stats.wpm} WPM, ${stats.accuracy}% acc.${subagents} Can you burn more?`;
