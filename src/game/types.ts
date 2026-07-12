@@ -90,6 +90,12 @@ export interface ChatMessage {
     beats?: ResponseBeat[];
     /** True while this agent message is still being revealed/played. */
     streaming?: boolean;
+    /**
+     * When `'summary'`, this message is a post-compaction archival line: the UI renders it dim
+     * and italic with a faint `✻` prefix instead of the normal accent `⏺` bullet. Unset for
+     * every other message.
+     */
+    variant?: 'summary';
 }
 
 /** A rank awarded at the end of a run, selected by WPM. */

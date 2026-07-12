@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import { buildReportBeats } from '@/data/agent-reports';
+import { buildCompactionSummary, buildCompactionThinkingBeats } from '@/data/compactions';
 import { OPENING_MESSAGES } from '@/data/greetings';
 import { SCENARIOS } from '@/data/scenarios';
 import { computeStats } from '@/game/scoring';
@@ -68,7 +69,7 @@ export interface UseGameReturn {
 }
 
 /** What the streaming agent message currently represents, so onAgentStreamDone knows what's next. */
-type StreamKind = 'opening' | 'setup' | 'response' | 'report' | 'timeup';
+type StreamKind = 'opening' | 'setup' | 'response' | 'report' | 'timeup' | 'compaction';
 
 /**
  * Deadpan sign-off lines streamed once the clock hits zero, before the results modal appears.
@@ -83,6 +84,17 @@ const TIMEUP_MESSAGES: string[] = [
 
 /** How many further prompt submissions pass before a launched swarm "reports back". */
 const REPORT_DUE_AFTER_PROMPTS = 2;
+
+/**
+ * Prompt-count spacing for the fake context-compaction gag: the first compaction is scheduled
+ * `COMPACTION_FIRST_MIN_PROMPTS` to `COMPACTION_FIRST_MIN_PROMPTS + 1` prompts into the run, and
+ * each subsequent one is rescheduled this many prompts after the one that just fired -- so it
+ * can recur on long runs.
+ */
+const COMPACTION_FIRST_MIN_PROMPTS = 3;
+const COMPACTION_INTERVAL_PROMPTS = 3;
+/** A compaction never fires until the transcript has at least this many messages to collapse. */
+const COMPACTION_MIN_MESSAGES = 5;
 
 /** A scheduled "the subagents reported in, it's all rubbish" interstitial. */
 interface PendingReport {
@@ -135,6 +147,12 @@ interface EngineState {
     streamKind: StreamKind | null;
     /** Swarms that have been launched and will "report back" a few prompts later. */
     pendingReports: PendingReport[];
+    /**
+     * `promptsCompleted` value at which the next fake context-compaction is due. Set to a
+     * finite value at run start and rescheduled `COMPACTION_INTERVAL_PROMPTS` further out each
+     * time one fires; `Infinity` while idle so it can never be "due" outside a run.
+     */
+    nextCompactionAtPrompts: number;
 
     /** True once the run-level wall clock has been armed by the first keystroke of the run. */
     clockStarted: boolean;
@@ -181,6 +199,7 @@ function createIdleState(): EngineState {
         queueIndex: -1,
         streamKind: null,
         pendingReports: [],
+        nextCompactionAtPrompts: Infinity,
         clockStarted: false,
         promptStarted: false,
     };
@@ -400,10 +419,12 @@ class GameEngine {
         s.currentPrompt = null;
         s.botVerdict = this.classifyBotVerdict();
 
-        // A response/setup/report message may be mid-reveal in the UI. Finalize it in place so
-        // the transcript doesn't leave a permanently-streaming bubble, but skip the normal
-        // finishedKind handling (advancing the queue, queueing a report, etc.) -- time ran out
-        // mid-sentence, so it doesn't get to complete.
+        // A response/setup/report/compaction message may be mid-reveal in the UI. Finalize it in
+        // place so the transcript doesn't leave a permanently-streaming bubble, but skip the
+        // normal finishedKind handling (advancing the queue, queueing a report, collapsing the
+        // transcript, etc.) -- time ran out mid-sentence, so it doesn't get to complete. In
+        // particular, a compaction caught mid-"thinking" here never reaches onAgentStreamDone,
+        // so the transcript is never collapsed -- it just stops, exactly like everything else.
         if (s.phase === 'streaming') {
             const messages = s.messages;
             const lastIndex = messages.length - 1;
@@ -472,6 +493,8 @@ class GameEngine {
         const state = createIdleState();
         state.queue = shuffle(SCENARIOS);
         state.queueIndex = -1;
+        // First compaction lands 3-4 prompts in; see COMPACTION_FIRST_MIN_PROMPTS.
+        state.nextCompactionAtPrompts = COMPACTION_FIRST_MIN_PROMPTS + Math.floor(Math.random() * 2);
         this.state = state;
 
         const opening = OPENING_MESSAGES[Math.floor(Math.random() * OPENING_MESSAGES.length)] ?? '';
@@ -507,6 +530,17 @@ class GameEngine {
         if (finishedKind === 'timeup') {
             // The deadpan sign-off has finished playing -> reveal the results modal.
             s.phase = 'finished';
+        } else if (finishedKind === 'compaction') {
+            // The "thinking" beat finished -> collapse the ENTIRE visible transcript into one
+            // deadpan archival line, then carry on straight into the next scenario's setup.
+            const summaryText = buildCompactionSummary({
+                promptsCompleted: s.promptsCompleted,
+                tokensBurned: s.tokensBurned,
+                subagentCount: s.subagentCount,
+            });
+            s.messages = [{ id: randomId(), role: 'agent', text: summaryText, variant: 'summary' }];
+            const scenario = advanceQueue(s);
+            this.pushStreamingAgentMessage(scenario.agentSetup, 'setup');
         } else if (finishedKind === 'opening' || finishedKind === 'response' || finishedKind === 'report') {
             // A launched swarm may be due to "report back" before the next task.
             if (finishedKind === 'response') {
@@ -515,6 +549,15 @@ class GameEngine {
                     const report = s.pendingReports[dueIndex]!;
                     s.pendingReports = s.pendingReports.filter((_, index) => index !== dueIndex);
                     this.pushStreamingAgentMessage('', 'report', buildReportBeats(report.count));
+                    this.emit();
+                    return;
+                }
+                // Reports take priority; a due compaction waits for the next gap if one just
+                // played. Otherwise, fire it now (if there's enough transcript to be worth
+                // collapsing) and reschedule the next one further out.
+                if (s.promptsCompleted >= s.nextCompactionAtPrompts && s.messages.length >= COMPACTION_MIN_MESSAGES) {
+                    s.nextCompactionAtPrompts = s.promptsCompleted + COMPACTION_INTERVAL_PROMPTS;
+                    this.pushStreamingAgentMessage('', 'compaction', buildCompactionThinkingBeats());
                     this.emit();
                     return;
                 }
