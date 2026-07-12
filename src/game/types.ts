@@ -67,7 +67,7 @@ export interface Scenario {
     agentSetup: string;
     /**
      * The prompt the player must type. MUST be plain ASCII typeable on a US keyboard
-     * (no smart quotes, em dashes, or unicode). Target length 60-140 chars.
+     * (no smart quotes, em dashes, or unicode). Target length 90-220 chars.
      */
     prompt: string;
     /**

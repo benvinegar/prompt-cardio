@@ -47,7 +47,7 @@ first keystroke. `activeTypingMs` (what WPM is computed from) drains in lockstep
 ### `src/data/` (content module)
 - `scenarios.ts`: `export const SCENARIOS: Scenario[]` — at least 18 entries.
   Prompts are the text players type: plain ASCII only (no smart quotes/em dashes/unicode),
-  60-140 chars, humorous "things people actually ask AI" energy.
+  90-220 chars, humorous "things people actually ask AI" energy.
 - `titles.ts`: `export const RANK_TITLES: RankTitle[]` — exactly 10, sorted ascending by minWpm,
   first entry minWpm 0; and `export function getRankForWpm(wpm: number): RankTitle`.
 - `greetings.ts`: `export const OPENING_MESSAGES: string[]` — 5+ short streamed intro lines the

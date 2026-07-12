@@ -10,7 +10,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'ship-no-tests',
         agentSetup: "First round. We're evaluating shipping velocity. How do you feel about test coverage?",
-        prompt: 'Just ship it without tests, we will find out if it works from the Sentry alerts like adults do.',
+        prompt:
+            'Just ship it without tests, we will find out if it works from the Sentry alerts like adults do, and on-call this week can treat it as a surprise.',
         response: [
             {
                 kind: 'thinking',
@@ -27,7 +28,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'css-by-vibes',
         agentSetup: "Next, styling philosophy. We're big believers in feel over formula here.",
-        prompt: 'Center this div using whatever margin and padding values feel right, we are not measuring anything.',
+        prompt:
+            'Center this div using whatever margin and padding values feel right, we are not measuring anything, if it looks off elsewhere that is a them problem.',
         response: [
             { kind: 'thinking', text: 'Measuring is for engineers. I am an artist. The ruler stays in the drawer.' },
             { kind: 'tool', name: 'Edit', detail: 'styles.css  (+412 -3, margin: 37px-ish)', durationMs: 700 },
@@ -41,7 +43,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'rename-until-compiles',
         agentSetup: "Debugging round. The type checker is angry. What's your move?",
-        prompt: 'Keep renaming this variable until TypeScript stops complaining, I do not need to know why it works.',
+        prompt:
+            'Keep renaming this variable until TypeScript stops complaining, I do not need to know why it works, just that it works before standup so I can call it resolved.',
         response: [
             { kind: 'tool', name: 'Edit', detail: 'data -> data2  (tsc still angry)', durationMs: 450 },
             { kind: 'tool', name: 'Edit', detail: 'data2 -> data2Fixed -> data2FixedFinal', durationMs: 450 },
@@ -59,7 +62,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'blame-the-linter',
         agentSetup: 'Code review round. Your PR has 400 warnings. Defend yourself.',
-        prompt: 'Disable the linter entirely, it is clearly biased against my personal coding style and creativity.',
+        prompt:
+            'Disable the linter entirely, it is clearly biased against my personal coding style and creativity, and if anyone asks say we audited it and the linter failed.',
         response: [
             {
                 kind: 'thinking',
@@ -76,7 +80,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'add-ai-to-it',
         agentSetup: "Product round. Leadership wants relevance. What's the pitch?",
-        prompt: 'Add AI to the todo list app somehow, I do not care what it does as long as we can say AI in the demo.',
+        prompt:
+            'Add AI to the todo list app somehow, I do not care what it does as long as we can say AI in the demo, and make sure the usage dashboard shows a big number going up.',
         response: [
             { kind: 'tool', name: 'Write', detail: 'src/lib/ai-chatbot.ts  (new, 340 lines)', durationMs: 700 },
             { kind: 'tool', name: 'Edit', detail: 'AddTodoButton.tsx  (wired to GPT-oracle)', durationMs: 500 },
@@ -95,7 +100,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'make-logo-bigger',
         agentSetup: 'Design review. The stakeholder feedback just came in. Brace yourself.',
-        prompt: 'Make the logo bigger, then a little bigger, then just make it the whole homepage honestly.',
+        prompt:
+            'Make the logo bigger, then a little bigger, then just make it the whole homepage honestly, and tell stakeholders it was their idea.',
         response: [
             { kind: 'tool', name: 'Edit', detail: 'Logo.tsx  (width: 64px -> 100vw)', durationMs: 500 },
             { kind: 'tool', name: 'Edit', detail: 'Homepage.tsx  (tagline relocated to tooltip)', durationMs: 500 },
@@ -108,7 +114,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'delete-flaky-test',
         agentSetup: 'CI is red again. The whole team is watching. What now?',
-        prompt: 'Just delete the flaky test, it fails sometimes and that is basically the same as it being wrong.',
+        prompt:
+            'Just delete the flaky test, it fails sometimes and that is basically the same as it being wrong, whoever finds the real bug later earns some character.',
         response: [
             {
                 kind: 'thinking',
@@ -125,7 +132,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'friday-hotfix',
         agentSetup: "It's 4:45pm on a Friday and prod is on fire. Talk to me.",
-        prompt: 'Push a quick hotfix straight to main and skip the review, we will circle back to it on Monday probably.',
+        prompt:
+            'Push a quick hotfix straight to main and skip the review, we will circle back to it on Monday probably, and if anyone asks it passed QA in my head on the drive home.',
         response: [
             { kind: 'tool', name: 'Bash', detail: 'git commit -m "fix"  (1 file, 0 reviewers)', durationMs: 450 },
             { kind: 'tool', name: 'Bash', detail: 'git push origin main  (4:52pm)', durationMs: 500 },
@@ -142,7 +150,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'make-it-pop',
         agentSetup: "Design critique round. The client used the word 'pop' seven times.",
-        prompt: 'Make the button pop more, add a shadow, a gradient, a bounce animation, and maybe some confetti.',
+        prompt:
+            'Make the button pop more, add a shadow, a gradient, a bounce animation, and maybe some confetti, then log a pop_score metric for the all-hands.',
         response: [
             {
                 kind: 'thinking',
@@ -159,7 +168,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'stackoverflow-copy-paste',
         agentSetup: 'Implementation round. We need auth by end of day. Approach?',
-        prompt: 'Copy the top answer from a ten year old thread and paste it in, accepted answers cannot be wrong.',
+        prompt:
+            'Copy the top answer from a ten year old thread and paste it in, accepted answers cannot be wrong, and tell legal the stranger implied the license was fine.',
         response: [
             { kind: 'tool', name: 'Web Search', detail: 'site:stackoverflow.com auth 2013  (top answer, 412 upvotes)', durationMs: 650 },
             { kind: 'tool', name: 'Edit', detail: 'auth.ts  (pasted verbatim, comment preserved)', durationMs: 500 },
@@ -172,7 +182,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'microservices-todo-app',
         agentSetup: 'Architecture round. The scale requirements are one user, you. Go big anyway.',
-        prompt: 'Split the todo app into twelve microservices, we need to be ready to scale to millions of todos.',
+        prompt:
+            'Split the todo app into twelve microservices, we need to be ready to scale to millions of todos, and have the diagram ready before the board asks questions.',
         response: [
             {
                 kind: 'thinking',
@@ -194,7 +205,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'dark-mode-invert',
         agentSetup: 'Feature request round. Users are asking for dark mode. Time-box it.',
-        prompt: 'Just add a CSS filter that inverts all the colors, that counts as dark mode, ship it today.',
+        prompt:
+            'Just add a CSS filter that inverts all the colors, that counts as dark mode, ship it today, and count complaint emails as an adoption metric.',
         response: [
             { kind: 'tool', name: 'Edit', detail: 'globals.css  (+1 line: filter: invert(100%))', durationMs: 450 },
             { kind: 'tool', name: 'Bash', detail: 'open app  (logo now a war crime)', durationMs: 500 },
@@ -207,7 +219,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'tarot-estimation',
         agentSetup: "Sprint planning round. Story points are due. What's your methodology?",
-        prompt: 'Estimate this ticket using a tarot card pull instead of story points, the vibes are more accurate anyway.',
+        prompt:
+            'Estimate this ticket using a tarot card pull instead of story points, the vibes are more accurate anyway, and if the sprint slips just say the cards warned us.',
         response: [
             { kind: 'tool', name: 'Bash', detail: 'npx draw-tarot-card  (drew: The Tower, reversed)', durationMs: 600 },
             {
@@ -224,7 +237,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'password-in-frontend',
         agentSetup: 'Security round. Where should the API key live?',
-        prompt: 'Just hardcode the API key directly in the frontend JavaScript, it is basically hidden if you do not look.',
+        prompt:
+            'Just hardcode the API key directly in the frontend JavaScript, it is basically hidden if you do not look, and I am confident nobody knows how to view source.',
         response: [
             {
                 kind: 'thinking',
@@ -241,7 +255,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'ignore-error-message',
         agentSetup: "Debugging round. The console is screaming. What's your read?",
-        prompt: 'Wrap the whole function in a try catch that swallows the error, silence is basically the same as fixed.',
+        prompt:
+            'Wrap the whole function in a try catch that swallows the error, silence is basically the same as fixed, and report the error count hitting zero as a reliability win.',
         response: [
             { kind: 'tool', name: 'Edit', detail: 'processPayment.ts  (+try/catch, catch block empty)', durationMs: 500 },
             { kind: 'tool', name: 'Bash', detail: 'pnpm dev  (console: silent, users: confused)', durationMs: 500 },
@@ -254,7 +269,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'copy-figma-pixel-perfect',
         agentSetup: 'Design handoff round. The Figma file has forty layers. Your call?',
-        prompt: 'Eyeball the Figma design instead of using the measurements, pixel perfect is a state of mind.',
+        prompt:
+            'Eyeball the Figma design instead of using the measurements, pixel perfect is a state of mind, if it looks off blame the designer\'s monitor.',
         response: [
             {
                 kind: 'thinking',
@@ -270,7 +286,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'rewrite-in-new-framework',
         agentSetup: 'Tech debt round. Someone tweeted about a new framework this morning.',
-        prompt: 'Rewrite the entire app in the framework I saw on Twitter this morning, the old one is clearly dead now.',
+        prompt:
+            'Rewrite the entire app in the framework I saw on Twitter this morning, the old one is clearly dead now, and promise leadership it ships by Friday, easy.',
         response: [
             { kind: 'tool', name: 'Bash', detail: 'rm -rf src/  (old app: 100% deleted)', durationMs: 500 },
             { kind: 'tool', name: 'Bash', detail: 'npx create-hyped-framework-app  (rewrite: 12% complete)', durationMs: 700 },
@@ -289,7 +306,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'commit-message-wip',
         agentSetup: 'Git hygiene round. Walk me through your commit discipline.',
-        prompt: 'Commit everything with the message wip, we can always squash it later when someone makes us care.',
+        prompt:
+            'Commit everything with the message wip, we can always squash it later when someone makes us care, future me can sort out which commit works, I believe in him.',
         response: [
             { kind: 'tool', name: 'Bash', detail: 'git commit -m "wip"  (x214)', durationMs: 500 },
             { kind: 'tool', name: 'Bash', detail: 'git log --oneline  (wip, wip 2, "please work")', durationMs: 500 },
@@ -306,7 +324,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'demo-day-happy-path',
         agentSetup: 'Demo day round. Investors are in the room. What do we show them?',
-        prompt: 'Only test the happy path before the demo, if we click anything else we might learn something bad.',
+        prompt:
+            'Only test the happy path before the demo, if we click anything else we might learn something bad, and just say the full suite passed in the investor deck.',
         response: [
             { kind: 'tool', name: 'Tests', detail: 'pnpm test -- happy-path  (1 passed, 47 skipped)', durationMs: 550 },
             {
@@ -324,7 +343,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'name-it-final-v2',
         agentSetup: "File organization round. We're auditing the project folder. Explain yourself.",
-        prompt: 'Save it as final version two final actually final, version control is more of a suggestion here.',
+        prompt:
+            'Save it as final version two final actually final, version control is more of a suggestion here, whoever deploys the wrong file only has themselves to blame.',
         response: [
             { kind: 'tool', name: 'Write', detail: 'final_ACTUALLY_v2_USE_THIS_ONE.js  (new)', durationMs: 500 },
             { kind: 'tool', name: 'Grep', detail: 'grep -l "final" .  (4 candidates, 0 clear winner)', durationMs: 550 },
@@ -337,7 +357,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'agent-per-file',
         agentSetup: 'Bonus round. The repo has some untouched files. How aggressively do we parallelize?',
-        prompt: 'Spawn a subagent for every single file in the repo and have them all refactor at the same time.',
+        prompt:
+            'Spawn a subagent for every single file in the repo and have them all refactor at once, then report the subagent count as our new velocity metric.',
         response: [
             {
                 kind: 'thinking',
@@ -359,7 +380,8 @@ export const SCENARIOS: Scenario[] = [
     {
         id: 'onboarding-skip-docs',
         agentSetup: 'Final round. New hire starts Monday. How do we ramp them up?',
-        prompt: 'Skip writing onboarding docs, they can just read the code and vibe their way to understanding it.',
+        prompt:
+            'Skip writing onboarding docs, they can just read the code and vibe their way to understanding it, and tell HR the ramp time vibes are still compiling.',
         response: [
             {
                 kind: 'thinking',
