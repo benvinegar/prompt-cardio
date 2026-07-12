@@ -188,13 +188,6 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
 
                         <div className="grid grid-cols-2 divide-x divide-y divide-border border-b border-border">
                             <div className="px-2 py-3 text-center">
-                                <div className="text-xl font-bold text-ink-bright tabular-nums">
-                                    {stats.accuracy}%
-                                </div>
-                                <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">accuracy</div>
-                            </div>
-
-                            <div className="px-2 py-3 text-center">
                                 <div className="text-xl font-bold text-ink-bright tabular-nums">{stats.wpm}</div>
                                 <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">wpm</div>
                             </div>
@@ -204,6 +197,13 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                                     {stats.tokensPerSecond}
                                 </div>
                                 <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">tok/s</div>
+                            </div>
+
+                            <div className="px-2 py-3 text-center">
+                                <div className="text-xl font-bold text-ink-bright tabular-nums">
+                                    {stats.accuracy}%
+                                </div>
+                                <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">accuracy</div>
                             </div>
 
                             <div className="px-2 py-3 text-center">
