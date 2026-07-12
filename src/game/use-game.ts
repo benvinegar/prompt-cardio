@@ -1,5 +1,5 @@
 /**
- * Engine hook for Prompt Faster. Owns the shuffled scenario queue, transcript, per-key
+ * Engine hook for Prompt Cardio. Owns the shuffled scenario queue, transcript, per-key
  * advance/error accounting, auto-submit on prompt completion, phase transitions, and final
  * stats. Two independent timers run here:
  *   - The wall clock (`remainingMs`, GAME_DURATION_MS budget) is armed by the first keystroke
@@ -236,7 +236,7 @@ function advanceQueue(state: EngineState): Scenario {
 }
 
 /**
- * Mutable engine driving Prompt Faster. Not itself a React hook — {@link useGame} adapts
+ * Mutable engine driving Prompt Cardio. Not itself a React hook — {@link useGame} adapts
  * it via `useSyncExternalStore` so per-keystroke updates avoid re-running the full hook body.
  */
 class GameEngine {
@@ -734,7 +734,7 @@ class GameEngine {
 }
 
 /**
- * React hook exposing the Prompt Faster game engine. State updates are driven by a
+ * React hook exposing the Prompt Cardio game engine. State updates are driven by a
  * long-lived mutable {@link GameEngine} instance and surfaced via `useSyncExternalStore`
  * so per-keystroke updates stay cheap while snapshots remain referentially fresh on change.
  */

@@ -10,7 +10,7 @@ import { formatTokensFull } from '@/lib/format';
 const FAKE_DOLLARS_PER_MILLION_TOKENS = 23.7;
 
 /** Canonical game URL included with every share so a brag is also a link back in. */
-const GAME_URL = 'https://benvinegar.github.io/prompt-typer/';
+const GAME_URL = 'https://benvinegar.github.io/prompt-cardio/';
 
 function fakeCost(tokens: number): string {
     const dollars = Math.round((tokens / 1_000_000) * FAKE_DOLLARS_PER_MILLION_TOKENS);

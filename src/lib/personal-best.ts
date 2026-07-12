@@ -1,5 +1,5 @@
 /**
- * Record-burn persistence for Prompt Faster. Tokens burned is the player's score now, so the
+ * Record-burn persistence for Prompt Cardio. Tokens burned is the player's score now, so the
  * "personal best" is the highest tokens-burned run, not the fastest WPM — stored in
  * localStorage so the results card and start screen can show a target to beat. Client-only:
  * every read/write is guarded so it's a safe no-op during SSR or when storage is unavailable
@@ -13,7 +13,7 @@ import type { GameStats } from '@/game/types';
  * tokensBurned (the score is now the burn total) — bump the version suffix again on shape
  * changes. Stale v1 keys are simply ignored, not migrated.
  */
-const STORAGE_KEY = 'prompt-faster:pb:v2';
+const STORAGE_KEY = 'prompt-cardio:pb:v1';
 
 /** The player's best-ever run (highest tokens burned), persisted across sessions. */
 export interface PersonalBest {

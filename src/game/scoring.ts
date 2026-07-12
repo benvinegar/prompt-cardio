@@ -1,5 +1,5 @@
 /**
- * Pure scoring math for Prompt Faster. No side effects, no state — every run's final
+ * Pure scoring math for Prompt Cardio. No side effects, no state — every run's final
  * (or live) stats are derived from a handful of counters via {@link computeStats}.
  */
 

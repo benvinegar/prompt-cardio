@@ -98,7 +98,7 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
             return;
         }
         setSaveState('saving');
-        void downloadCardAsPng(cardRef.current, `prompt-faster-${stats.wpm}wpm.png`)
+        void downloadCardAsPng(cardRef.current, `prompt-cardio-${stats.wpm}wpm.png`)
             .then(() => setSaveState('idle'))
             .catch(() => setSaveState('error'));
     };

@@ -1,4 +1,4 @@
-# Prompt Faster — Build Spec
+# Prompt Cardio — Build Spec
 
 A 100% client-side viral typing game: a fake AI chat where the *player* is the one being tested.
 Theme: you are an engineering candidate being evaluated on your ability to VIBE CODE software

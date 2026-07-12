@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 export default defineConfig(({ mode }) => ({
-    base: mode === 'production' ? '/prompt-typer/' : '/',
+    base: mode === 'production' ? '/prompt-cardio/' : '/',
     plugins: [react(), tailwindcss()],
     resolve: {
         alias: {

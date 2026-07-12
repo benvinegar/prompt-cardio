@@ -1,5 +1,5 @@
 /**
- * Core shared contracts for Prompt Faster. Every module (data, engine, UI) codes
+ * Core shared contracts for Prompt Cardio. Every module (data, engine, UI) codes
  * against these types — do not change them without updating all consumers.
  */
 

@@ -20,12 +20,12 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
     return (
         <div className="flex min-h-dvh flex-col items-center justify-center px-6 py-16 font-mono">
-            <TitleBorderPanel title="prompt-faster — the vibe coding screen" className="w-full max-w-lg text-center">
+            <TitleBorderPanel title="prompt-cardio — the vibe coding screen" className="w-full max-w-lg text-center">
                 <p className="text-sm text-ink-dim">
                     candidate connected · evaluation in progress · this session is billed to you
                 </p>
 
-                <h1 className="mt-5 text-2xl font-bold text-ink-bright sm:text-3xl">prompt-faster</h1>
+                <h1 className="mt-5 text-2xl font-bold text-ink-bright sm:text-3xl">prompt cardio</h1>
                 <p className="mt-2 text-sm text-ink-dim">the vibe coding interview. you are the candidate.</p>
 
                 <ul className="mt-6 flex flex-col gap-2 text-left text-sm text-ink-dim">

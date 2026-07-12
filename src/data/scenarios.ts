@@ -1,5 +1,5 @@
 /**
- * Canned scenario content for Prompt Faster. The player is a candidate on a technical
+ * Canned scenario content for Prompt Cardio. The player is a candidate on a technical
  * screen for a vibe coding role. Each scenario is one exchange: the interviewer/copilot
  * tees up a task, the player types `prompt` verbatim as the vibe coder would type it to
  * their AI copilot, then the copilot's canned `response` beats stream in as the reward.

@@ -1,5 +1,5 @@
 /**
- * Synthesized sound effects for Prompt Faster, built entirely on the Web Audio API — no asset
+ * Synthesized sound effects for Prompt Cardio, built entirely on the Web Audio API — no asset
  * files, no dependencies. A single lazily-created `AudioContext` feeds a quiet master gain node;
  * every effect is a short (<150ms) oscillator envelope scheduled against it. Everything here is
  * best-effort: on unsupported/unavailable environments (SSR, locked-down browsers, exhausted
@@ -10,7 +10,7 @@
 const MASTER_GAIN = 0.15;
 
 /** localStorage key used to persist the user's mute preference across sessions. */
-const MUTE_STORAGE_KEY = 'prompt-faster:muted';
+const MUTE_STORAGE_KEY = 'prompt-cardio:muted';
 
 let audioContext: AudioContext | null = null;
 let masterGain: GainNode | null = null;

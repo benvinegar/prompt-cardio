@@ -1,12 +1,12 @@
-# Prompt Faster
+# Prompt Cardio
 
 The vibe coding interview. A typing test disguised as an AI chat.
 
-**[Play it →](https://benvinegar.github.io/prompt-typer/)**
+**[Play it →](https://benvinegar.github.io/prompt-cardio/)**
 
-![CI](https://github.com/benvinegar/prompt-typer/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/benvinegar/prompt-cardio/actions/workflows/ci.yml/badge.svg)
 
-![Prompt Faster](public/og.png)
+![Prompt Cardio](public/og.png)
 
 ## How it works
 
