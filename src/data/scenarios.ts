@@ -115,7 +115,7 @@ export const SCENARIOS: Scenario[] = [
         id: 'delete-flaky-test',
         agentSetup: 'CI is red again. The whole team is watching. What now?',
         prompt:
-            'Just delete the flaky test, it fails sometimes and that is basically the same as it being wrong, whoever finds the real bug later earns some character.',
+            'Just delete the flaky test, it fails sometimes and that is basically the same as it being wrong, the bug can introduce itself to customers directly.',
         response: [
             {
                 kind: 'thinking',
@@ -381,7 +381,7 @@ export const SCENARIOS: Scenario[] = [
         id: 'onboarding-skip-docs',
         agentSetup: 'Final round. New hire starts Monday. How do we ramp them up?',
         prompt:
-            'Skip writing onboarding docs, they can just read the code and vibe their way to understanding it, and tell HR the ramp time vibes are still compiling.',
+            'Skip writing onboarding docs, they can just read the code and vibe their way to understanding it, questions just mean the vibes have not loaded yet.',
         response: [
             {
                 kind: 'thinking',
