@@ -7,24 +7,38 @@ Vite + React 19 + TanStack Router + Tailwind CSS 4. No server, no persistence be
 
 ## Game loop
 
-1. Start screen ("idle"). Big title, one-line pitch, START button. Explain: 60 seconds on the clock,
-   the clock only runs while YOU type.
-2. The fake agent streams a short setup message char-by-char (phase `streaming`, clock frozen).
+Two independent timers drive the run: a **wall clock** (`remainingMs`, 60s budget) that, once
+armed, ticks down continuously across every phase and never pauses again, and a **typing timer**
+(`activeTypingMs`) that only accrues while the player is actively typing the current prompt. WPM
+is computed from the typing timer alone, so the agent's streaming/thinking theatrics cost the
+player wall clock but never distort their measured typing speed.
+
+1. Start screen ("idle"). Big title, one-line pitch, START button. Explain: 60 seconds on the
+   wall clock, armed by your first keystroke, running non-stop after that — including while the
+   AI is busy showing off.
+2. The fake agent streams a short setup message char-by-char (phase `streaming`). The wall clock
+   is not yet armed before the player's very first keystroke of the run, so this opening reveal
+   is free; every reveal after that costs wall clock even though the player isn't typing.
 3. A ghost prompt appears in the chat input area, greyed out (like Nitrotype's upcoming text).
-   Phase `typing`. The clock is armed by the FIRST keystroke of the prompt (reading is free, so
-   WPM measures true typing speed). The player must type it exactly:
+   Phase `typing`. The wall clock is armed by the FIRST keystroke of the RUN (not per prompt);
+   the typing timer is armed by the first keystroke of THIS prompt, so WPM measures true typing
+   speed even though reading a later prompt still burns wall clock. The player must type it
+   exactly:
    - Correct keystroke → advances one char (rendered filled-in / highlighted).
    - Wrong keystroke → does NOT advance; recorded as an error; brief shake/red flash.
    - No backspace needed (you never advance on error). Ignore non-printable keys entirely.
 4. The last correct keystroke AUTO-SUBMITS (no Enter): the prompt posts to the transcript as a
-   user bubble, phase `thinking` (spinner, clock frozen, ~600-900ms), then the agent streams its
-   canned funny response (phase `streaming`, fast ~2s), then the next ghost prompt → `typing`.
-5. When the 60s of active typing time is exhausted (may happen mid-prompt), phase `finished`:
-   show the results modal.
+   user bubble, phase `thinking` (spinner, wall clock still running, ~600-900ms), then the agent
+   streams its canned funny response (phase `streaming`, fast ~2s, wall clock still running),
+   then the next ghost prompt → `typing`.
+5. When the wall clock is exhausted (may happen mid-prompt, mid-stream, or mid-thinking), phase
+   `finished`: any in-flight streaming message is finalized in place, a deadpan sign-off streams,
+   then the results modal shows.
 
 ## Scoring
 
-- WPM = (correctChars / 5) / (activeTypingMs / 60000)
+- WPM = (correctChars / 5) / (activeTypingMs / 60000) — `activeTypingMs` is the typing-only
+  timer, not the 60s wall clock, so streaming/thinking time never dilutes WPM.
 - accuracy = correctKeystrokes / totalKeystrokes * 100 (100 if none)
 - tokens/sec = (correctChars / 4) / (activeTypingMs / 1000)
 - Title: one of 10 ranks selected by WPM bands (see `src/data/titles.ts`).
@@ -54,10 +68,15 @@ interface UseGameReturn {
 }
 ```
 
-Engine owns: shuffled scenario queue, transcript messages, per-key advance/error logic, Enter
-submission, the frozen-while-streaming countdown, phase transitions, and final stats. The UI owns
-the char-by-char reveal animation of agent messages and reports completion via `onAgentStreamDone()`.
-Timer must only decrement in `typing` phase (use an interval ~50-100ms; clamp at 0 → `finished`).
+Engine owns: shuffled scenario queue, transcript messages, per-key advance/error logic, auto-submit,
+phase transitions, and final stats -- across two independent timers. The UI owns the char-by-char
+reveal animation of agent messages and reports completion via `onAgentStreamDone()`. The wall clock
+(`remainingMs`, the 60s budget) is armed by the run's first keystroke and decrements in every phase
+(typing, streaming, thinking) until it hits 0, at which point it clamps and the run resolves to
+`finished` via a deadpan sign-off, even mid-stream or mid-think. The typing timer (`activeTypingMs`,
+what WPM is derived from) only accrues while `phase === 'typing'` and the current prompt has been
+started, so it measures true typing speed regardless of how the wall clock is spent. Use one
+interval ~50-100ms driving both.
 
 ### `src/components/` (UI module)
 - `game-screen.tsx`: `export function GameScreen()` — the single route component; composes

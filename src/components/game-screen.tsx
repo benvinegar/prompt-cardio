@@ -21,7 +21,8 @@ const TIME_LOW_THRESHOLD_MS = 10_000;
  */
 export function GameScreen() {
     const { snapshot, start, reset, handleKey, onAgentStreamDone } = useGame();
-    const { phase, messages, currentPrompt, typedCount, lastKeyWasError, remainingMs, stats } = snapshot;
+    const { phase, messages, currentPrompt, typedCount, lastKeyWasError, remainingMs, clockStarted, stats } =
+        snapshot;
 
     const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -107,10 +108,11 @@ export function GameScreen() {
         }
     }, [messages]);
 
-    // Soft clock tick, once per second, while under 10s remain during active typing.
+    // Soft clock tick, once per second, while under 10s remain on the (armed) wall clock, in
+    // any phase -- typing, streaming, or thinking -- as long as the run isn't over.
     const lastLowSecondRef = useRef<number | null>(null);
     useEffect(() => {
-        if (phase !== 'typing' || remainingMs >= TIME_LOW_THRESHOLD_MS || remainingMs <= 0) {
+        if (!clockStarted || phase === 'finished' || remainingMs >= TIME_LOW_THRESHOLD_MS || remainingMs <= 0) {
             lastLowSecondRef.current = null;
             return;
         }
@@ -119,7 +121,7 @@ export function GameScreen() {
             lastLowSecondRef.current = bucket;
             playTimeLow();
         }
-    }, [phase, remainingMs]);
+    }, [phase, remainingMs, clockStarted]);
 
     if (phase === 'idle') {
         return <StartScreen onStart={start} />;
@@ -129,6 +131,7 @@ export function GameScreen() {
         <div className="flex h-dvh flex-col overflow-hidden bg-bg">
             <Hud
                 remainingMs={remainingMs}
+                clockStarted={clockStarted}
                 wpm={stats.wpm}
                 accuracy={stats.accuracy}
                 tokensBurned={stats.tokensBurned}

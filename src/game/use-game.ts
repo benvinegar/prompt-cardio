@@ -1,10 +1,18 @@
 /**
  * Engine hook for Prompt Faster. Owns the shuffled scenario queue, transcript, per-key
- * advance/error accounting, auto-submit on prompt completion, the frozen-while-streaming
- * countdown, phase transitions, and final stats. The clock only runs between the first
- * keystroke of a prompt and its submission, so reading time is free and WPM reflects true
- * typing speed. The UI owns the char-by-char reveal animation of agent messages and reports
- * completion via `onAgentStreamDone()`.
+ * advance/error accounting, auto-submit on prompt completion, phase transitions, and final
+ * stats. Two independent timers run here:
+ *   - The wall clock (`remainingMs`, GAME_DURATION_MS budget) is armed by the first keystroke
+ *     of the RUN and, once armed, ticks down continuously across every phase -- typing,
+ *     streaming, thinking -- until it hits 0. It never pauses again. Reading the opening
+ *     greeting before the player's very first keystroke is free; every reveal after that costs
+ *     wall clock, even though the player isn't typing.
+ *   - The typing timer (`activeTypingMs`) only accrues while `phase === 'typing'` AND the
+ *     current prompt has been started (its own first keystroke), stopping at submit. This is
+ *     what WPM is computed from, so it reflects true typing speed regardless of how much the
+ *     agent's theatrics eat into the wall clock.
+ * The UI owns the char-by-char reveal animation of agent messages and reports completion via
+ * `onAgentStreamDone()`.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
@@ -21,7 +29,7 @@ import {
     type Scenario,
 } from '@/game/types';
 
-/** Interval cadence for the countdown timer while `phase === 'typing'`. */
+/** Interval cadence for the master wall-clock/typing-timer tick, once armed. */
 const TICK_MS = 60;
 /** Random delay range (inclusive) for the fake "thinking" pause after submit. */
 const THINKING_DELAY_MIN_MS = 600;
@@ -106,6 +114,11 @@ interface EngineState {
     streamKind: StreamKind | null;
     /** Swarms that have been launched and will "report back" a few prompts later. */
     pendingReports: PendingReport[];
+
+    /** True once the run-level wall clock has been armed by the first keystroke of the run. */
+    clockStarted: boolean;
+    /** True once the first keystroke of the CURRENT prompt has landed; gates activeTypingMs accrual. */
+    promptStarted: boolean;
 }
 
 /** Fisher-Yates shuffle; returns a new array, does not mutate the input. */
@@ -141,6 +154,8 @@ function createIdleState(): EngineState {
         queueIndex: -1,
         streamKind: null,
         pendingReports: [],
+        clockStarted: false,
+        promptStarted: false,
     };
 }
 
@@ -202,6 +217,7 @@ class GameEngine {
             typedCount: s.typedCount,
             lastKeyWasError: s.lastKeyWasError,
             remainingMs: s.remainingMs,
+            clockStarted: s.clockStarted,
             subagentCount: s.subagentCount,
             streak: s.streak,
             stats: computeStats({
@@ -224,10 +240,7 @@ class GameEngine {
     }
 
     private clearTimers(): void {
-        if (this.tickHandle !== null) {
-            clearInterval(this.tickHandle);
-            this.tickHandle = null;
-        }
+        this.stopMasterClock();
         if (this.errorFlashHandle !== null) {
             clearTimeout(this.errorFlashHandle);
             this.errorFlashHandle = null;
@@ -274,72 +287,104 @@ class GameEngine {
         this.emit();
     };
 
-    /**
-     * Enters 'typing' phase. The countdown does NOT start yet — reading the prompt is free.
-     * The clock is armed by {@link startClock} on the first keystroke of the prompt.
-     */
+    /** Enters 'typing' phase for the current prompt. Does not touch either timer. */
     private enterTyping(): void {
         this.state.phase = 'typing';
     }
 
-    /** Starts the countdown interval (idempotent); called on the first keystroke of a prompt. */
-    private startClock(): void {
-        if (this.tickHandle !== null) {
+    /**
+     * Arms the run-level wall clock (idempotent past the first call): starts the master tick
+     * interval that drives `remainingMs` down continuously from here on, across every phase,
+     * until it hits 0. Called on the first keystroke of the RUN, so the opening greeting/setup
+     * before the player ever types is free.
+     */
+    private armClock(): void {
+        if (this.state.clockStarted) {
             return;
         }
+        this.state.clockStarted = true;
         this.lastTickAt = Date.now();
         this.tickHandle = setInterval(this.onTick, TICK_MS);
     }
 
-    /** Stops the countdown interval, flushing the elapsed remainder so no typing time is dropped. */
-    private stopClock(): void {
+    /** Clears the master tick interval (idempotent). Does not flush -- callers sync first. */
+    private stopMasterClock(): void {
         if (this.tickHandle === null) {
             return;
         }
         clearInterval(this.tickHandle);
         this.tickHandle = null;
+    }
 
-        const now = Date.now();
+    /**
+     * Flushes elapsed wall-clock time since the last sync into `remainingMs` (always, once
+     * armed) and `activeTypingMs` (only while `phase === 'typing'` and the current prompt has
+     * been started). A no-op before the clock is armed. Called on every master tick and at
+     * phase-transition points (submit) so precision doesn't depend on tick cadence -- the same
+     * "flush the sub-tick remainder" trick the old per-prompt clock used, now shared by both
+     * timers.
+     */
+    private syncClock(now: number = Date.now()): void {
+        if (this.tickHandle === null) {
+            return;
+        }
         const delta = now - this.lastTickAt;
         this.lastTickAt = now;
-        this.state.activeTypingMs += delta;
+
         this.state.remainingMs = Math.max(0, this.state.remainingMs - delta);
+        if (this.state.phase === 'typing' && this.state.promptStarted) {
+            this.state.activeTypingMs += delta;
+        }
     }
 
     private onTick = (): void => {
-        if (this.state.phase !== 'typing') {
-            return;
-        }
-        const now = Date.now();
-        const delta = now - this.lastTickAt;
-        this.lastTickAt = now;
-
-        this.state.activeTypingMs += delta;
-        this.state.remainingMs = Math.max(0, this.state.remainingMs - delta);
-
+        this.syncClock();
         if (this.state.remainingMs <= 0) {
-            this.state.remainingMs = 0;
             this.triggerTimeUp();
         }
-
         this.emit();
     };
 
     /**
-     * Fires once when the clock hits zero: freezes the countdown/burn meter (stats stop moving),
-     * clears the in-progress prompt so no further input registers, and streams a deadpan
+     * Fires once when the wall clock hits zero, from ANY phase (typing, streaming, or
+     * thinking): stops the master clock and burn meter (stats stop moving), cancels a pending
+     * "thinking" timeout if one was in flight (the response never arrives -- time's up), clamps
+     * `remainingMs` and clears the in-progress prompt so no further input registers, finalizes
+     * an in-flight streaming message in place (without running its normal
+     * `onAgentStreamDone` advancement -- it doesn't get to finish), and streams a deadpan
      * "time's up" sign-off before the results modal appears (via `onAgentStreamDone`). Guarded
-     * against double-firing — both the tick path and the submit-flush path can observe
-     * `remainingMs <= 0`, but only the first call should push the sign-off message.
+     * against double-firing — the tick path, the submit-flush path, and (mid-stream) the master
+     * clock ticking through 'streaming'/'thinking' can all observe `remainingMs <= 0`, but only
+     * the first call should push the sign-off message.
      */
     private triggerTimeUp(): void {
         const s = this.state;
         if (s.streamKind === 'timeup') {
             return;
         }
-        this.stopClock();
+        this.stopMasterClock();
         this.stopBurn();
+        if (this.thinkingHandle !== null) {
+            clearTimeout(this.thinkingHandle);
+            this.thinkingHandle = null;
+        }
+        s.remainingMs = 0;
         s.currentPrompt = null;
+
+        // A response/setup/report message may be mid-reveal in the UI. Finalize it in place so
+        // the transcript doesn't leave a permanently-streaming bubble, but skip the normal
+        // finishedKind handling (advancing the queue, queueing a report, etc.) -- time ran out
+        // mid-sentence, so it doesn't get to complete.
+        if (s.phase === 'streaming') {
+            const messages = s.messages;
+            const lastIndex = messages.length - 1;
+            if (lastIndex >= 0 && messages[lastIndex]!.streaming) {
+                const last = messages[lastIndex]!;
+                s.messages = [...messages.slice(0, lastIndex), { ...last, streaming: false }];
+            }
+            s.streamKind = null;
+        }
+
         const message = TIMEUP_MESSAGES[Math.floor(Math.random() * TIMEUP_MESSAGES.length)] ?? TIMEUP_MESSAGES[0]!;
         this.pushStreamingAgentMessage(message, 'timeup');
     }
@@ -414,11 +459,14 @@ class GameEngine {
             const scenario = advanceQueue(s);
             this.pushStreamingAgentMessage(scenario.agentSetup, 'setup');
         } else if (finishedKind === 'setup') {
-            // Setup finished streaming -> move to typing the current scenario's prompt.
+            // Setup finished streaming -> move to typing the current scenario's prompt. Fresh
+            // prompt, so its own "has typing started" bookkeeping resets (the run-level wall
+            // clock, if already armed, keeps running regardless).
             const scenario = s.queue[s.queueIndex]!;
             s.currentPrompt = scenario.prompt;
             s.typedCount = 0;
             s.lastKeyWasError = false;
+            s.promptStarted = false;
             this.enterTyping();
         }
 
@@ -436,9 +484,11 @@ class GameEngine {
             return;
         }
 
-        // The clock is armed by the first keystroke of each prompt, so reading time is free
-        // and WPM measures actual typing speed.
-        this.startClock();
+        // Arms the run-level wall clock on the very first keystroke of the whole run (a no-op
+        // after that -- it never re-arms per prompt). Marks that typing has begun on THIS
+        // prompt, so activeTypingMs starts accruing for it and WPM measures true typing speed.
+        this.armClock();
+        s.promptStarted = true;
 
         const prompt = s.currentPrompt;
         const expected = prompt[s.typedCount];
@@ -487,13 +537,18 @@ class GameEngine {
             return;
         }
 
-        this.stopClock();
+        // Flush the sub-tick remainder so the exact submit instant is credited precisely to
+        // both timers -- crucially, this stops crediting activeTypingMs the moment the phase
+        // changes below, without stopping the master interval: the wall clock keeps running
+        // straight through 'thinking' and the next 'streaming' setup.
+        this.syncClock();
 
         s.promptsCompleted += 1;
         s.messages = [...s.messages, { id: randomId(), role: 'user', text: prompt }];
         s.currentPrompt = null;
         s.typedCount = 0;
         s.lastKeyWasError = false;
+        s.promptStarted = false;
 
         // The flush above may have consumed the last of the clock on the final keystroke.
         if (s.remainingMs <= 0) {
