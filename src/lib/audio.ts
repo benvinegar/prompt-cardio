@@ -156,7 +156,7 @@ export function playKeyClick(): void {
         type: 'square',
         attackSec: 0.002,
         decaySec: 0.03,
-        peakGain: 0.5,
+        peakGain: 0.25,
         lowpassHz: 4000,
     });
 }
