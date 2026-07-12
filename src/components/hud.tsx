@@ -14,6 +14,8 @@ const COMBO_TIER_3_STREAK = 100;
 
 export interface HudProps {
     remainingMs: number;
+    /** True once the run's wall clock has been armed by the first keystroke. */
+    clockStarted: boolean;
     wpm: number;
     accuracy: number;
     tokensBurned: number;
@@ -130,13 +132,22 @@ function MuteToggle() {
 }
 
 /**
- * Top HUD bar: countdown clock, a "clock frozen" hint while the agent works, the comedic
+ * Top HUD bar: countdown clock, an "arming" hint before the run's first keystroke, the comedic
  * ever-rising token-burn meter (with a subagent chip once the agent starts delegating),
  * a clean-streak combo indicator, live WPM/accuracy, and the sound mute toggle.
  */
-export function Hud({ remainingMs, wpm, accuracy, tokensBurned, subagentCount, streak, phase }: HudProps) {
-    const isLow = phase === 'typing' && remainingMs < LOW_TIME_THRESHOLD_MS;
-    const isFrozen = phase === 'streaming' || phase === 'thinking';
+export function Hud({
+    remainingMs,
+    clockStarted,
+    wpm,
+    accuracy,
+    tokensBurned,
+    subagentCount,
+    streak,
+    phase,
+}: HudProps) {
+    const isLow = clockStarted && remainingMs < LOW_TIME_THRESHOLD_MS;
+    const showArmingHint = phase !== 'idle' && !clockStarted;
 
     return (
         <div className="flex items-center justify-between gap-3 border-b border-border bg-bg-elevated/80 px-4 py-3 backdrop-blur-sm sm:px-6">
@@ -148,17 +159,13 @@ export function Hud({ remainingMs, wpm, accuracy, tokensBurned, subagentCount, s
                 >
                     {formatClock(remainingMs)}
                 </span>
-                {isFrozen && (
+                {showArmingHint && (
                     <span className="flex items-center gap-1 rounded-full border border-border bg-bg-panel px-2 py-0.5 text-[11px] font-medium text-ink-dim">
                         <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3" aria-hidden="true">
-                            <path
-                                d="M12 2v20M4.5 6.5 19.5 17.5M19.5 6.5 4.5 17.5"
-                                stroke="currentColor"
-                                strokeWidth="1.5"
-                                strokeLinecap="round"
-                            />
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+                            <path d="M12 7v5l3.5 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
-                        clock frozen
+                        clock starts when you type
                     </span>
                 )}
             </div>
@@ -173,27 +180,22 @@ export function Hud({ remainingMs, wpm, accuracy, tokensBurned, subagentCount, s
                         <span className="tabular-nums">{subagentCount}</span> agents
                     </span>
                 )}
-                <span
-                    className="inline-block min-w-[6ch] text-right tabular-nums"
-                    title="tokens burned (they are not coming back)"
-                >
+                {/* The two headline numbers, stacked: tokens (the score) on top, WPM under it. */}
+                <div className="flex min-w-[11ch] flex-col items-end leading-tight">
                     <span
-                        className={
-                            subagentCount > 0
-                                ? 'font-bold text-accent-bright drop-shadow-[0_0_6px_var(--color-accent)]'
-                                : 'text-ink'
-                        }
+                        className={`text-sm font-bold tabular-nums text-accent-bright sm:text-base ${
+                            subagentCount > 0 ? 'drop-shadow-[0_0_6px_var(--color-accent)]' : ''
+                        }`}
+                        title="tokens burned (they are not coming back)"
                     >
-                        {formatTokensCompact(tokensBurned)}
-                    </span>{' '}
-                    tok
-                </span>
-                <span>
-                    <span className="text-ink">{wpm}</span> wpm
-                </span>
-                <span className="hidden sm:inline">
-                    <span className="text-ink">{accuracy}</span>% acc
-                </span>
+                        {formatTokensCompact(tokensBurned)} tok
+                    </span>
+                    <span className="tabular-nums text-[11px] sm:text-xs">
+                        <span className="font-semibold text-success">{wpm} wpm</span>
+                        <span className="hidden text-ink-faint sm:inline"> · </span>
+                        <span className="hidden sm:inline">{accuracy}% acc</span>
+                    </span>
+                </div>
                 <MuteToggle />
             </div>
         </div>
