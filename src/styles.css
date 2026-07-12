@@ -16,11 +16,12 @@
     --color-ink-dim: #6e6e78;
     --color-ink-faint: #45454e;
 
-    /* One accent, amber-coral, for everything that isn't plain reading text. */
-    --color-accent: #f59e6b;
-    --color-accent-bright: #ffb385;
-    --color-accent-dim: #f59e6b55;
-    --color-accent-soft: #f59e6b1a;
+    /* One accent — caution yellow (speed, warning tape, money on fire) — for everything
+       that isn't plain reading text. Deliberately not Claude Code coral or pi orange. */
+    --color-accent: #f2d24b;
+    --color-accent-bright: #ffe873;
+    --color-accent-dim: #f2d24b55;
+    --color-accent-soft: #f2d24b1a;
 
     --color-danger: #f4645a;
     --color-danger-soft: #f4645a26;
