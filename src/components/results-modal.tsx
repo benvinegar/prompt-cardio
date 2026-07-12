@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getRankForWpm, RANK_TITLES } from '@/data/titles';
 import type { GameStats } from '@/game/types';
+import { formatTokensCompact, formatTokensFull } from '@/lib/format';
 import { loadPersonalBest, recordRunIfBest, type PersonalBest } from '@/lib/personal-best';
 import { buildShareText, downloadCardAsPng, shareResult } from '@/lib/share';
 
@@ -13,12 +14,9 @@ export interface ResultsModalProps {
 /** Joke $/1M-token rate used for the fake bill. Precise-looking numbers are funnier. */
 const FAKE_DOLLARS_PER_MILLION_TOKENS = 23.7;
 
-function formatTokens(tokens: number): string {
-    return Math.floor(tokens).toLocaleString('en-US');
-}
-
 function fakeCost(tokens: number): string {
-    return `$${((tokens / 1_000_000) * FAKE_DOLLARS_PER_MILLION_TOKENS).toFixed(2)}`;
+    const dollars = (tokens / 1_000_000) * FAKE_DOLLARS_PER_MILLION_TOKENS;
+    return `$${dollars.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 /** Dark overlay + centered, screenshot-friendly card showing the final rank and stat grid. */
@@ -93,7 +91,7 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                 <div ref={cardRef}>
                     {isNewPb && (
                         <div className="mx-auto mb-4 flex w-fit animate-pulse items-center gap-1.5 rounded-full border border-accent-dim bg-accent-soft px-3 py-1 text-xs font-bold tracking-wide text-accent-bright uppercase">
-                            <span aria-hidden="true">✨</span> New personal best
+                            <span aria-hidden="true">✨</span> New record burn
                         </div>
                     )}
 
@@ -103,7 +101,11 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                             {rank.title}
                         </h1>
                         <p className="mt-1 text-sm text-ink-dim">{rank.blurb}</p>
-                        {!isNewPb && pb && <p className="mt-2 text-xs text-ink-faint">PB: {pb.wpm} WPM</p>}
+                        {!isNewPb && pb && (
+                            <p className="mt-2 text-xs text-ink-faint">
+                                Record burn: {formatTokensCompact(pb.tokensBurned)} tokens
+                            </p>
+                        )}
                     </div>
 
                     <div className="mt-5 flex items-center justify-center gap-1.5 rounded-2xl border border-border bg-bg-panel px-3 py-2.5">
@@ -130,19 +132,27 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                         </p>
                     )}
 
-                    <div className="mt-5 grid grid-cols-2 gap-3">
-                        <div className="col-span-2 rounded-2xl border border-accent-dim bg-accent-soft px-4 py-4 text-center">
-                            <div className="font-mono text-5xl font-bold tabular-nums text-accent-bright">
-                                {stats.wpm}
-                            </div>
-                            <div className="mt-1 text-xs tracking-wide text-ink-dim uppercase">WPM</div>
+                    <div className="mt-5 rounded-2xl border border-accent-dim bg-accent-soft px-4 py-4 text-center">
+                        <div className="font-mono text-4xl font-bold tabular-nums text-accent-bright sm:text-5xl">
+                            {formatTokensFull(stats.tokensBurned)}
                         </div>
+                        <div className="mt-1 text-xs tracking-wide text-ink-dim uppercase">
+                            tokens burned by your copilot
+                        </div>
+                        <div className="mt-1 text-xs text-ink-faint">est. bill: {fakeCost(stats.tokensBurned)}</div>
+                    </div>
 
+                    <div className="mt-3 grid grid-cols-2 gap-3">
                         <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
                             <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
                                 {stats.accuracy}%
                             </div>
                             <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Accuracy</div>
+                        </div>
+
+                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
+                            <div className="font-mono text-2xl font-semibold tabular-nums text-ink">{stats.wpm}</div>
+                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">WPM</div>
                         </div>
 
                         <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
@@ -161,20 +171,11 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                             <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Prompts</div>
                         </div>
 
-                        <div className="rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
+                        <div className="col-span-2 rounded-2xl border border-border bg-bg-panel px-3 py-3 text-center">
                             <div className="font-mono text-2xl font-semibold tabular-nums text-ink">
                                 {stats.errors}
                             </div>
                             <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">Errors</div>
-                        </div>
-
-                        <div className="col-span-2 rounded-2xl border border-border bg-bg-panel px-4 py-3 text-center">
-                            <div className="font-mono text-2xl font-semibold tabular-nums text-accent-bright">
-                                {formatTokens(stats.tokensBurned)}
-                            </div>
-                            <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">
-                                tokens burned by your copilot (est. {fakeCost(stats.tokensBurned)})
-                            </div>
                         </div>
                     </div>
 

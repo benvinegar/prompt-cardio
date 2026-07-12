@@ -4,18 +4,24 @@
  */
 import { toPng } from 'html-to-image';
 import type { GameStats } from '@/game/types';
+import { formatTokensFull } from '@/lib/format';
 
-function formatTokens(tokens: number): string {
-    return Math.floor(tokens).toLocaleString('en-US');
+/** Joke $/1M-token rate used for the fake bill, mirrored from the results card. */
+const FAKE_DOLLARS_PER_MILLION_TOKENS = 23.7;
+
+function fakeCost(tokens: number): string {
+    const dollars = Math.round((tokens / 1_000_000) * FAKE_DOLLARS_PER_MILLION_TOKENS);
+    return `$${dollars.toLocaleString('en-US')}`;
 }
 
-/** Builds the shareable brag text using the player's actual run stats and earned rank title. */
+/**
+ * Builds the shareable brag text, leading with the burn total (the actual score) since that's
+ * the joke, then the rank verdict and typing stats as supporting detail.
+ */
 export function buildShareText(stats: GameStats, rankTitle: string): string {
     const subagents =
-        stats.subagentCount > 0
-            ? ` My copilot burned ${formatTokens(stats.tokensBurned)} tokens and left ${stats.subagentCount} subagents running.`
-            : '';
-    return `My vibe coding interview verdict: "${rankTitle}" — ${stats.wpm} WPM, ${stats.accuracy}% acc, ${stats.tokensPerSecond} tok/s.${subagents} Think you'd get the offer? Prompt Faster`;
+        stats.subagentCount > 0 ? ` ${stats.subagentCount} subagents still running.` : '';
+    return `I made my copilot burn ${formatTokensFull(stats.tokensBurned)} tokens (est. ${fakeCost(stats.tokensBurned)}) in a 60 second interview — "${rankTitle}", ${stats.wpm} WPM, ${stats.accuracy}% acc.${subagents} Prompt Faster`;
 }
 
 /**

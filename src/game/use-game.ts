@@ -30,11 +30,17 @@ const THINKING_DELAY_MAX_MS = 900;
 /** Cadence of the comedic token-burn meter. */
 const BURN_TICK_MS = 100;
 /** Baseline tokens/sec burned while the agent is "working" (streaming or thinking). */
-const BURN_RATE_AGENT_ACTIVE = 320;
+const BURN_RATE_AGENT_ACTIVE = 3200;
 /** Baseline tokens/sec while the agent idles waiting on the human (someone left the context on). */
-const BURN_RATE_AGENT_IDLE = 6;
+const BURN_RATE_AGENT_IDLE = 60;
 /** Additional tokens/sec burned by EACH ripping subagent, forever. */
-const BURN_RATE_PER_SUBAGENT = 480;
+const BURN_RATE_PER_SUBAGENT = 4800;
+/**
+ * Per-prompt compounding multiplier applied to the burn rate: the deeper the interview goes,
+ * the more recklessly the copilot spends. Rate is scaled by ESCALATION_PER_PROMPT raised to the
+ * number of prompts completed so far, so burn is roughly linear early on and absurd by prompt 10+.
+ */
+const ESCALATION_PER_PROMPT = 1.6;
 
 /** The shape returned by {@link useGame}. */
 export interface UseGameReturn {
@@ -260,7 +266,8 @@ class GameEngine {
 
         const agentActive = s.phase === 'streaming' || s.phase === 'thinking';
         const baseRate = agentActive ? BURN_RATE_AGENT_ACTIVE : BURN_RATE_AGENT_IDLE;
-        const rate = baseRate + s.subagentCount * BURN_RATE_PER_SUBAGENT;
+        const escalation = ESCALATION_PER_PROMPT ** s.promptsCompleted;
+        const rate = (baseRate + s.subagentCount * BURN_RATE_PER_SUBAGENT) * escalation;
         // Jitter makes the meter feel like real, slightly panicked usage telemetry.
         s.tokensBurned += rate * deltaSec * (0.7 + Math.random() * 0.6);
 

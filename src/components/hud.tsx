@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { GamePhase } from '@/game/types';
 import { isMuted, setMuted } from '@/lib/audio';
+import { formatTokensCompact } from '@/lib/format';
 
 const LOW_TIME_THRESHOLD_MS = 10_000;
 
@@ -172,9 +173,18 @@ export function Hud({ remainingMs, wpm, accuracy, tokensBurned, subagentCount, s
                         <span className="tabular-nums">{subagentCount}</span> agents
                     </span>
                 )}
-                <span className="hidden tabular-nums sm:inline" title="tokens burned (they are not coming back)">
-                    <span className={subagentCount > 0 ? 'text-accent-bright' : 'text-ink'}>
-                        {Math.floor(tokensBurned).toLocaleString('en-US')}
+                <span
+                    className="inline-block min-w-[6ch] text-right tabular-nums"
+                    title="tokens burned (they are not coming back)"
+                >
+                    <span
+                        className={
+                            subagentCount > 0
+                                ? 'font-bold text-accent-bright drop-shadow-[0_0_6px_var(--color-accent)]'
+                                : 'text-ink'
+                        }
+                    >
+                        {formatTokensCompact(tokensBurned)}
                     </span>{' '}
                     tok
                 </span>

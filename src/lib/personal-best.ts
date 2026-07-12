@@ -1,20 +1,25 @@
 /**
- * Personal-best persistence for Prompt Faster. Stores the player's best run in localStorage so
- * the results card and start screen can show a target to beat. Client-only: every read/write is
- * guarded so it's a safe no-op during SSR or when storage is unavailable (private browsing,
- * quota exceeded, disabled storage).
+ * Record-burn persistence for Prompt Faster. Tokens burned is the player's score now, so the
+ * "personal best" is the highest tokens-burned run, not the fastest WPM — stored in
+ * localStorage so the results card and start screen can show a target to beat. Client-only:
+ * every read/write is guarded so it's a safe no-op during SSR or when storage is unavailable
+ * (private browsing, quota exceeded, disabled storage).
  */
 import { getRankForWpm } from '@/data/titles';
 import type { GameStats } from '@/game/types';
 
-/** localStorage key for the stored personal best. Bump the version suffix on shape changes. */
-const STORAGE_KEY = 'prompt-faster:pb:v1';
+/**
+ * localStorage key for the stored personal best. v2 switched the ranking metric from WPM to
+ * tokensBurned (the score is now the burn total) — bump the version suffix again on shape
+ * changes. Stale v1 keys are simply ignored, not migrated.
+ */
+const STORAGE_KEY = 'prompt-faster:pb:v2';
 
-/** The player's best-ever run, persisted across sessions. */
+/** The player's best-ever run (highest tokens burned), persisted across sessions. */
 export interface PersonalBest {
+    tokensBurned: number;
     wpm: number;
     accuracy: number;
-    tokensPerSecond: number;
     rankTitle: string;
     /** ISO 8601 timestamp of when this best was set. */
     dateISO: string;
@@ -26,9 +31,9 @@ function isPersonalBest(value: unknown): value is PersonalBest {
     }
     const candidate = value as Record<string, unknown>;
     return (
+        typeof candidate.tokensBurned === 'number' &&
         typeof candidate.wpm === 'number' &&
         typeof candidate.accuracy === 'number' &&
-        typeof candidate.tokensPerSecond === 'number' &&
         typeof candidate.rankTitle === 'string' &&
         typeof candidate.dateISO === 'string'
     );
@@ -55,21 +60,21 @@ export function loadPersonalBest(): PersonalBest | null {
 }
 
 /**
- * Records a finished run as the new personal best when its WPM strictly exceeds the current
- * best (ties keep the existing best, since it was set earlier). Persists the result to
+ * Records a finished run as the new personal best when its tokensBurned strictly exceeds the
+ * current best (ties keep the existing best, since it was set earlier). Persists the result to
  * localStorage when it changes. Safe to call during SSR or with storage disabled — the returned
  * `pb` is still correct for the current render even if the write silently fails.
  */
 export function recordRunIfBest(stats: GameStats): { pb: PersonalBest; isNew: boolean } {
     const current = loadPersonalBest();
-    if (current && stats.wpm <= current.wpm) {
+    if (current && stats.tokensBurned <= current.tokensBurned) {
         return { pb: current, isNew: false };
     }
 
     const pb: PersonalBest = {
+        tokensBurned: stats.tokensBurned,
         wpm: stats.wpm,
         accuracy: stats.accuracy,
-        tokensPerSecond: stats.tokensPerSecond,
         rankTitle: getRankForWpm(stats.wpm).title,
         dateISO: new Date().toISOString(),
     };

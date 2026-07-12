@@ -1,3 +1,4 @@
+import { formatTokensCompact } from '@/lib/format';
 import { loadPersonalBest } from '@/lib/personal-best';
 
 export interface StartScreenProps {
@@ -41,6 +42,10 @@ export function StartScreen({ onStart }: StartScreenProps) {
             <ul className="mt-8 flex w-full max-w-sm flex-col gap-3 text-left">
                 <li className="flex items-start gap-2.5 text-sm text-ink-dim">
                     <CheckIcon />
+                    <span>Your mission: make the AI burn as many tokens as possible. Speed feeds the fire.</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-ink-dim">
+                    <CheckIcon />
                     <span>Prompt your AI copilot through the tasks by typing the ghost text.</span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-ink-dim">
@@ -55,9 +60,12 @@ export function StartScreen({ onStart }: StartScreenProps) {
 
             {pb && (
                 <p className="mt-6 text-sm text-ink-dim">
-                    Your record: <span className="font-mono font-semibold text-accent-bright">{pb.wpm} WPM</span>
-                    {' — '}
-                    <span className="text-ink">&ldquo;{pb.rankTitle}&rdquo;</span>
+                    Your record burn:{' '}
+                    <span className="font-mono font-semibold text-accent-bright">
+                        {formatTokensCompact(pb.tokensBurned)} tokens
+                    </span>
+                    {' ('}
+                    {pb.wpm} WPM{')'}
                 </p>
             )}
 

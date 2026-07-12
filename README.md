@@ -12,15 +12,17 @@ The vibe coding interview. A typing test disguised as an AI chat.
 
 You're an engineering candidate being evaluated on your ability to vibe code. A smug AI copilot
 streams you a setup, then a ghost prompt appears in the composer — type it exactly to send it.
+The goal: burn as many tokens as possible. Tokens burned is your score.
 
 - **60 seconds of active typing time.** The clock only runs while you're typing; it freezes
   whenever the agent is streaming a response.
 - **Wrong keys don't advance.** No backspacing — a bad keystroke just costs you.
 - **The last correct key auto-sends** the prompt, no Enter required.
-- Along the way: fake subagent swarms spinning up, a token meter ticking, and other bits of
-  copilot theater.
-- At 0 seconds, you get a verdict: WPM, accuracy, tokens/sec, and a rank from
-  **Auto-Rejected by ATS** all the way up to **CTO of Vibes**.
+- **The burn rate compounds.** Every prompt you finish makes the copilot spend more
+  recklessly than the last — plus fake subagent swarms that spin up and burn tokens forever,
+  and other bits of copilot theater.
+- At 0 seconds, you get a verdict: tokens burned (your score), WPM, accuracy, tokens/sec, and
+  a rank from **Auto-Rejected by ATS** all the way up to **CTO of Vibes**.
 
 100% client-side. No server, no accounts, no telemetry.
 
