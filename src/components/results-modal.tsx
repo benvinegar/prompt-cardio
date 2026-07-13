@@ -180,55 +180,47 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                                 })}
                             </div>
                         )}
-                        {!isDisqualified && (
-                            <p className="mt-2 min-h-[3em] text-center text-xs">
+                        {!isDisqualified && (inspectedRank || nextRank) && (
+                            <p className="mt-2 text-center text-xs">
                                 {inspectedRank ? (
                                     <>
                                         <span className="font-bold text-ink-bright">{inspectedRank.title}</span>
-                                        <span className="text-ink-faint"> · {inspectedRank.minWpm}+ wpm</span>
-                                        <br />
-                                        <span className="text-ink-dim">{inspectedRank.blurb}</span>
+                                        <span className="text-ink-faint"> · {inspectedRank.minWpm}+ wpm</span>{' '}
+                                        <span className="text-ink-dim">— {inspectedRank.blurb}</span>
                                     </>
                                 ) : nextRank ? (
                                     <span className="text-ink-dim">
                                         +{nextRank.minWpm - stats.wpm} wpm to &ldquo;{nextRank.title}&rdquo;
-                                        <br />
-                                        <span className="text-ink-faint">hover the ladder to browse ranks</span>
                                     </span>
-                                ) : (
-                                    <span className="text-ink-dim">
-                                        top of the ladder
-                                        <br />
-                                        <span className="text-ink-faint">hover the ladder to browse ranks</span>
-                                    </span>
-                                )}
+                                ) : null}
                             </p>
                         )}
 
-                        <div className="mt-5 border-y border-border py-4 text-center">
+                        <div className="mt-3 border-y border-border py-4 text-center">
                             <div className="text-4xl font-bold text-accent tabular-nums sm:text-5xl">
                                 {formatTokensFull(stats.tokensBurned)}
                             </div>
                             <div className="mt-1 text-xs tracking-wide text-ink-dim uppercase">
-                                tokens burned by your copilot
+                                tokens burned <span className="text-ink-faint">· est. bill: {fakeCost(stats.tokensBurned)}</span>
                             </div>
-                            <div className="mt-1 text-xs text-ink-faint">est. bill: {fakeCost(stats.tokensBurned)}</div>
                         </div>
 
-                        <div className="grid grid-cols-2 divide-x divide-y divide-border border-b border-border">
-                            <div className="px-2 py-3 text-center">
+                        <div className="grid grid-cols-2 border-b border-border">
+                            <div className="border-r border-b border-border px-2 py-3 text-center">
                                 <div className="text-xl font-bold text-ink-bright tabular-nums">{stats.wpm}</div>
                                 <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">wpm</div>
                             </div>
 
-                            <div className="px-2 py-3 text-center">
+                            <div className="border-b border-border px-2 py-3 text-center">
                                 <div className="text-xl font-bold text-ink-bright tabular-nums">
-                                    {stats.tokensPerSecond}
+                                    {stats.subagentCount}
                                 </div>
-                                <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">tok/s</div>
+                                <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">
+                                    subagents running
+                                </div>
                             </div>
 
-                            <div className="px-2 py-3 text-center">
+                            <div className="border-r border-border px-2 py-3 text-center">
                                 <div className="text-xl font-bold text-ink-bright tabular-nums">
                                     {stats.accuracy}%
                                 </div>
@@ -240,12 +232,6 @@ export function ResultsModal({ stats, onPlayAgain, onClose }: ResultsModalProps)
                                 <div className="mt-1 text-[11px] tracking-wide text-ink-dim uppercase">errors</div>
                             </div>
                         </div>
-
-                        {stats.subagentCount > 0 && (
-                            <p className="mt-3 text-center text-xs text-ink-faint">
-                                * {stats.subagentCount} subagents are still running. this is now your problem.
-                            </p>
-                        )}
                         {isDisqualified && (
                             <p className="mt-3 text-center text-xs text-ink-faint">
                                 * this run was disqualified. the transcript has been forwarded to compliance.
